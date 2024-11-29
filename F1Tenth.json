@@ -1,0 +1,768 @@
+{
+  "configById": {
+    "RawMessages!29kri75": {
+      "diffEnabled": false,
+      "diffMethod": "custom",
+      "diffTopicPath": "",
+      "showFullMessageForDiff": false,
+      "topicPath": "/zed/zed_node/rgb/camera_info",
+      "fontSize": 12
+    },
+    "Plot!2it6zao": {
+      "paths": [
+        {
+          "timestampMethod": "receiveTime",
+          "value": "/teleop.drive.speed",
+          "enabled": true,
+          "color": "#4e98e2"
+        }
+      ],
+      "showXAxisLabels": true,
+      "showYAxisLabels": true,
+      "showLegend": true,
+      "legendDisplay": "floating",
+      "showPlotValuesInLegend": false,
+      "isSynced": true,
+      "xAxisVal": "timestamp",
+      "sidebarDimension": 240
+    },
+    "Plot!2la1a65": {
+      "paths": [
+        {
+          "timestampMethod": "receiveTime",
+          "value": "/sensors/imu.imu.angular_velocity.x",
+          "enabled": true,
+          "color": "#4e98e2",
+          "label": "x"
+        },
+        {
+          "timestampMethod": "receiveTime",
+          "value": "/sensors/imu.imu.angular_velocity.y",
+          "enabled": true,
+          "color": "#f5774d",
+          "label": "y"
+        },
+        {
+          "timestampMethod": "receiveTime",
+          "value": "/sensors/imu.imu.angular_velocity.z",
+          "enabled": true,
+          "color": "#f7df71",
+          "label": "z"
+        }
+      ],
+      "showXAxisLabels": true,
+      "showYAxisLabels": true,
+      "showLegend": true,
+      "legendDisplay": "floating",
+      "showPlotValuesInLegend": false,
+      "isSynced": true,
+      "xAxisVal": "timestamp",
+      "sidebarDimension": 240,
+      "foxglovePanelTitle": "Angular velocity"
+    },
+    "Plot!1w6tcaf": {
+      "paths": [
+        {
+          "timestampMethod": "receiveTime",
+          "value": "/sensors/core.state.temp_fet",
+          "enabled": true,
+          "color": "#4e98e2",
+          "label": "fet"
+        },
+        {
+          "timestampMethod": "receiveTime",
+          "value": "/sensors/core.state.temp_motor",
+          "enabled": true,
+          "color": "#f5774d",
+          "label": "motor"
+        },
+        {
+          "timestampMethod": "receiveTime",
+          "value": "/sensors/core.state.ntc_temp_mos1",
+          "enabled": true,
+          "color": "#f7df71",
+          "label": "mos1"
+        },
+        {
+          "timestampMethod": "receiveTime",
+          "value": "/sensors/core.state.ntc_temp_mos2",
+          "enabled": true,
+          "color": "#5cd6a9",
+          "label": "mos2"
+        },
+        {
+          "timestampMethod": "receiveTime",
+          "value": "/sensors/core.state.ntc_temp_mos3",
+          "enabled": true,
+          "color": "#61cbff",
+          "label": "mos3"
+        }
+      ],
+      "showXAxisLabels": true,
+      "showYAxisLabels": true,
+      "showLegend": true,
+      "legendDisplay": "floating",
+      "showPlotValuesInLegend": false,
+      "isSynced": true,
+      "xAxisVal": "timestamp",
+      "sidebarDimension": 240,
+      "foxglovePanelTitle": "Temperatures"
+    },
+    "Plot!4z0pjz": {
+      "paths": [
+        {
+          "timestampMethod": "receiveTime",
+          "value": "/sensors/imu.imu.linear_acceleration.x",
+          "enabled": true,
+          "color": "#4e98e2",
+          "label": "x"
+        },
+        {
+          "timestampMethod": "receiveTime",
+          "value": "/sensors/imu.imu.linear_acceleration.y",
+          "enabled": true,
+          "color": "#f5774d",
+          "label": "y"
+        },
+        {
+          "timestampMethod": "receiveTime",
+          "value": "/sensors/imu.imu.linear_acceleration.z",
+          "enabled": true,
+          "color": "#f7df71",
+          "label": "z"
+        }
+      ],
+      "showXAxisLabels": true,
+      "showYAxisLabels": true,
+      "showLegend": true,
+      "legendDisplay": "floating",
+      "showPlotValuesInLegend": false,
+      "isSynced": true,
+      "xAxisVal": "timestamp",
+      "sidebarDimension": 240,
+      "foxglovePanelTitle": "Linear Acceleration"
+    },
+    "Plot!1qwgxx2": {
+      "paths": [
+        {
+          "timestampMethod": "receiveTime",
+          "value": "/sensors/core.state.current_motor",
+          "enabled": true,
+          "color": "#4e98e2"
+        },
+        {
+          "timestampMethod": "receiveTime",
+          "value": "/sensors/core.state.current_input",
+          "enabled": true,
+          "color": "#f5774d"
+        }
+      ],
+      "showXAxisLabels": true,
+      "showYAxisLabels": true,
+      "showLegend": true,
+      "legendDisplay": "floating",
+      "showPlotValuesInLegend": false,
+      "isSynced": true,
+      "xAxisVal": "timestamp",
+      "sidebarDimension": 240
+    },
+    "Plot!282gw84": {
+      "paths": [
+        {
+          "timestampMethod": "receiveTime",
+          "value": "/sensors/imu.imu.ypr.x",
+          "enabled": true,
+          "color": "#4e98e2",
+          "label": "pitch"
+        },
+        {
+          "timestampMethod": "receiveTime",
+          "value": "/sensors/imu.imu.ypr.y",
+          "enabled": true,
+          "color": "#f5774d",
+          "label": "roll"
+        },
+        {
+          "timestampMethod": "receiveTime",
+          "value": "/sensors/imu.imu.ypr.z",
+          "enabled": true,
+          "color": "#f7df71",
+          "label": "yaw"
+        }
+      ],
+      "showXAxisLabels": true,
+      "showYAxisLabels": true,
+      "showLegend": true,
+      "legendDisplay": "floating",
+      "showPlotValuesInLegend": false,
+      "isSynced": true,
+      "xAxisVal": "timestamp",
+      "sidebarDimension": 240,
+      "foxglovePanelTitle": "Orientation"
+    },
+    "Plot!1nd9qej": {
+      "paths": [
+        {
+          "timestampMethod": "receiveTime",
+          "value": "/sensors/core.state.speed",
+          "enabled": true,
+          "color": "#4e98e2"
+        }
+      ],
+      "showXAxisLabels": true,
+      "showYAxisLabels": true,
+      "showLegend": true,
+      "legendDisplay": "floating",
+      "showPlotValuesInLegend": false,
+      "isSynced": true,
+      "xAxisVal": "timestamp",
+      "sidebarDimension": 240
+    },
+    "RawMessages!3i0yyum": {
+      "diffEnabled": false,
+      "diffMethod": "custom",
+      "diffTopicPath": "",
+      "showFullMessageForDiff": false,
+      "topicPath": "/sensors/core.state.voltage_input",
+      "fontSize": 12
+    },
+    "Plot!3q8sglk": {
+      "paths": [
+        {
+          "timestampMethod": "receiveTime",
+          "value": "/joy.axes[0]",
+          "enabled": true,
+          "color": "#4e98e2",
+          "label": "horizontal"
+        },
+        {
+          "timestampMethod": "receiveTime",
+          "value": "/joy.axes[1]",
+          "enabled": true,
+          "color": "#f5774d",
+          "label": "vertical"
+        }
+      ],
+      "showXAxisLabels": true,
+      "showYAxisLabels": true,
+      "showLegend": true,
+      "legendDisplay": "floating",
+      "showPlotValuesInLegend": false,
+      "isSynced": true,
+      "xAxisVal": "timestamp",
+      "sidebarDimension": 240,
+      "foxglovePanelTitle": "left_stick"
+    },
+    "Indicator!2p65vec": {
+      "path": "/joy.buttons[4]",
+      "style": "background",
+      "fontSize": 36,
+      "fallbackColor": "#a0a0a0",
+      "fallbackLabel": "Released",
+      "rules": [
+        {
+          "operator": "=",
+          "rawValue": "1",
+          "color": "#f47eed",
+          "label": "Pressed"
+        }
+      ],
+      "foxglovePanelTitle": "y_buttons"
+    },
+    "Indicator!3ep0cet": {
+      "path": "/joy.buttons[1]",
+      "style": "background",
+      "fontSize": 36,
+      "fallbackColor": "#a0a0a0",
+      "fallbackLabel": "Released",
+      "rules": [
+        {
+          "operator": "=",
+          "rawValue": "1",
+          "color": "#f47eed",
+          "label": "Pressed"
+        }
+      ],
+      "foxglovePanelTitle": "a_button"
+    },
+    "Indicator!dlmwp1": {
+      "path": "/joy.buttons[7]",
+      "style": "background",
+      "fontSize": 36,
+      "fallbackColor": "#a0a0a0",
+      "fallbackLabel": "Released",
+      "rules": [
+        {
+          "operator": "=",
+          "rawValue": "1",
+          "color": "#f47eed",
+          "label": "Pressed"
+        }
+      ],
+      "foxglovePanelTitle": "rt_button"
+    },
+    "Indicator!dekgf0": {
+      "path": "/joy.buttons[3]",
+      "style": "background",
+      "fontSize": 36,
+      "fallbackColor": "#a0a0a0",
+      "fallbackLabel": "Released",
+      "rules": [
+        {
+          "operator": "=",
+          "rawValue": "1",
+          "color": "#f47eed",
+          "label": "Pressed"
+        }
+      ],
+      "foxglovePanelTitle": "a_button"
+    },
+    "Indicator!ptyto4": {
+      "path": "/joy.buttons[0]",
+      "style": "background",
+      "fontSize": 36,
+      "fallbackColor": "#a0a0a0",
+      "fallbackLabel": "Released",
+      "rules": [
+        {
+          "operator": "=",
+          "rawValue": "1",
+          "color": "#f47eed",
+          "label": "Pressed"
+        }
+      ],
+      "foxglovePanelTitle": "a_button"
+    },
+    "Indicator!2qog566": {
+      "path": "/joy.buttons[6]",
+      "style": "background",
+      "fontSize": 36,
+      "fallbackColor": "#a0a0a0",
+      "fallbackLabel": "Released",
+      "rules": [
+        {
+          "operator": "=",
+          "rawValue": "1",
+          "color": "#f47eed",
+          "label": "Pressed"
+        }
+      ],
+      "foxglovePanelTitle": "lt_button"
+    },
+    "Plot!1ys4quy": {
+      "paths": [
+        {
+          "timestampMethod": "receiveTime",
+          "value": "/joy.axes[2]",
+          "enabled": true,
+          "color": "#4e98e2",
+          "label": "horizontal"
+        },
+        {
+          "timestampMethod": "receiveTime",
+          "value": "/joy.axes[3]",
+          "enabled": true,
+          "color": "#f5774d",
+          "label": "vertical"
+        }
+      ],
+      "showXAxisLabels": true,
+      "showYAxisLabels": true,
+      "showLegend": true,
+      "legendDisplay": "floating",
+      "showPlotValuesInLegend": false,
+      "isSynced": true,
+      "xAxisVal": "timestamp",
+      "sidebarDimension": 240,
+      "foxglovePanelTitle": "right_stick"
+    },
+    "Plot!2my164s": {
+      "paths": [
+        {
+          "timestampMethod": "receiveTime",
+          "value": "/joy.axes[4]",
+          "enabled": true,
+          "color": "#4e98e2",
+          "label": "right"
+        },
+        {
+          "timestampMethod": "receiveTime",
+          "value": "/joy.axes[5]",
+          "enabled": true,
+          "color": "#f5774d",
+          "label": "left"
+        }
+      ],
+      "showXAxisLabels": true,
+      "showYAxisLabels": true,
+      "showLegend": true,
+      "legendDisplay": "floating",
+      "showPlotValuesInLegend": false,
+      "isSynced": true,
+      "xAxisVal": "timestamp",
+      "sidebarDimension": 240,
+      "foxglovePanelTitle": "triggers"
+    },
+    "Image!1mbl5fz": {
+      "cameraState": {
+        "distance": 20,
+        "perspective": true,
+        "phi": 60,
+        "target": [
+          0,
+          0,
+          0
+        ],
+        "targetOffset": [
+          0,
+          0,
+          0
+        ],
+        "targetOrientation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "thetaOffset": 45,
+        "fovy": 45,
+        "near": 0.5,
+        "far": 5000
+      },
+      "followMode": "follow-pose",
+      "scene": {},
+      "transforms": {},
+      "topics": {
+        "/initialpose": {
+          "visible": false
+        },
+        "/zed/zed_node/point_cloud/cloud_registered": {
+          "visible": false
+        }
+      },
+      "layers": {},
+      "publish": {
+        "type": "point",
+        "poseTopic": "/move_base_simple/goal",
+        "pointTopic": "/clicked_point",
+        "poseEstimateTopic": "/initialpose",
+        "poseEstimateXDeviation": 0.5,
+        "poseEstimateYDeviation": 0.5,
+        "poseEstimateThetaDeviation": 0.26179939
+      },
+      "imageMode": {
+        "imageTopic": "/zed/zed_node/depth/depth_registered",
+        "calibrationTopic": "/zed/zed_node/depth/camera_info",
+        "rotation": 0
+      }
+    },
+    "Image!45dfsgs": {
+      "cameraState": {
+        "distance": 20,
+        "perspective": true,
+        "phi": 60,
+        "target": [
+          0,
+          0,
+          0
+        ],
+        "targetOffset": [
+          0,
+          0,
+          0
+        ],
+        "targetOrientation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "thetaOffset": 45,
+        "fovy": 45,
+        "near": 0.5,
+        "far": 5000
+      },
+      "followMode": "follow-pose",
+      "scene": {},
+      "transforms": {},
+      "topics": {
+        "/initialpose": {
+          "visible": false
+        },
+        "/zed/zed_node/point_cloud/cloud_registered": {
+          "visible": false
+        }
+      },
+      "layers": {},
+      "publish": {
+        "type": "point",
+        "poseTopic": "/move_base_simple/goal",
+        "pointTopic": "/clicked_point",
+        "poseEstimateTopic": "/initialpose",
+        "poseEstimateXDeviation": 0.5,
+        "poseEstimateYDeviation": 0.5,
+        "poseEstimateThetaDeviation": 0.26179939
+      },
+      "imageMode": {
+        "imageTopic": "/zed/zed_node/confidence/confidence_map",
+        "calibrationTopic": "/zed/zed_node/rgb/camera_info",
+        "rotation": 0
+      }
+    },
+    "Image!1t5p0ae": {
+      "cameraState": {
+        "distance": 20,
+        "perspective": true,
+        "phi": 60,
+        "target": [
+          0,
+          0,
+          0
+        ],
+        "targetOffset": [
+          0,
+          0,
+          0
+        ],
+        "targetOrientation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "thetaOffset": 45,
+        "fovy": 45,
+        "near": 0.5,
+        "far": 5000
+      },
+      "followMode": "follow-pose",
+      "scene": {},
+      "transforms": {},
+      "topics": {
+        "/initialpose": {
+          "visible": false
+        },
+        "/zed/zed_node/point_cloud/cloud_registered": {
+          "visible": false
+        }
+      },
+      "layers": {},
+      "publish": {
+        "type": "point",
+        "poseTopic": "/move_base_simple/goal",
+        "pointTopic": "/clicked_point",
+        "poseEstimateTopic": "/initialpose",
+        "poseEstimateXDeviation": 0.5,
+        "poseEstimateYDeviation": 0.5,
+        "poseEstimateThetaDeviation": 0.26179939
+      },
+      "imageMode": {
+        "imageTopic": "/zed/zed_node/rgb/image_rect_color",
+        "calibrationTopic": "/zed/zed_node/rgb/camera_info",
+        "rotation": 0
+      }
+    },
+    "Plot!2qu0q0q": {
+      "paths": [
+        {
+          "timestampMethod": "publishTime",
+          "value": "/joy.axes[4]",
+          "enabled": true,
+          "color": "#4e98e2"
+        }
+      ],
+      "showXAxisLabels": true,
+      "showYAxisLabels": true,
+      "showLegend": true,
+      "legendDisplay": "floating",
+      "showPlotValuesInLegend": false,
+      "isSynced": true,
+      "xAxisVal": "timestamp",
+      "sidebarDimension": 240
+    },
+    "Plot!1ogz3vj": {
+      "paths": [
+        {
+          "timestampMethod": "receiveTime",
+          "value": "/commands/motor/position.data",
+          "enabled": true,
+          "color": "#4e98e2"
+        }
+      ],
+      "showXAxisLabels": true,
+      "showYAxisLabels": true,
+      "showLegend": true,
+      "legendDisplay": "floating",
+      "showPlotValuesInLegend": false,
+      "isSynced": true,
+      "xAxisVal": "timestamp",
+      "sidebarDimension": 240
+    },
+    "Plot!3yeyyua": {
+      "paths": [
+        {
+          "timestampMethod": "publishTime",
+          "value": "/joy.axes[1]",
+          "enabled": true,
+          "color": "#4e98e2"
+        }
+      ],
+      "showXAxisLabels": true,
+      "showYAxisLabels": true,
+      "showLegend": true,
+      "legendDisplay": "floating",
+      "showPlotValuesInLegend": false,
+      "isSynced": true,
+      "xAxisVal": "timestamp",
+      "sidebarDimension": 240
+    },
+    "RawMessages!38pr24f": {
+      "diffEnabled": false,
+      "diffMethod": "custom",
+      "diffTopicPath": "",
+      "showFullMessageForDiff": false,
+      "topicPath": "/ackermann_cmd",
+      "fontSize": 12
+    },
+    "Tab!2v2qr5t": {
+      "activeTabIdx": 5,
+      "tabs": [
+        {
+          "title": "",
+          "layout": {
+            "first": "RawMessages!29kri75",
+            "second": "Plot!2it6zao",
+            "direction": "column"
+          }
+        },
+        {
+          "title": "vesc_imu",
+          "layout": {
+            "first": {
+              "first": "Plot!2la1a65",
+              "second": "Plot!1w6tcaf",
+              "direction": "column",
+              "splitPercentage": 50.15321756894791
+            },
+            "second": {
+              "first": {
+                "first": "Plot!4z0pjz",
+                "second": "Plot!1qwgxx2",
+                "direction": "column"
+              },
+              "second": {
+                "first": "Plot!282gw84",
+                "second": {
+                  "first": "Plot!1nd9qej",
+                  "second": "RawMessages!3i0yyum",
+                  "direction": "column",
+                  "splitPercentage": 78.75383043922369
+                },
+                "direction": "column"
+              },
+              "direction": "row"
+            },
+            "direction": "row",
+            "splitPercentage": 36.486486486486484
+          }
+        },
+        {
+          "title": "Controller",
+          "layout": {
+            "first": {
+              "first": "Plot!3q8sglk",
+              "second": {
+                "first": {
+                  "first": "Indicator!2p65vec",
+                  "second": {
+                    "first": "Indicator!3ep0cet",
+                    "second": "Indicator!dlmwp1",
+                    "direction": "row",
+                    "splitPercentage": 50.28429649539957
+                  },
+                  "direction": "row",
+                  "splitPercentage": 30.851400618866233
+                },
+                "second": {
+                  "first": "Indicator!dekgf0",
+                  "second": {
+                    "first": "Indicator!ptyto4",
+                    "second": "Indicator!2qog566",
+                    "direction": "row",
+                    "splitPercentage": 50.28429649539957
+                  },
+                  "direction": "row",
+                  "splitPercentage": 30.851400618866233
+                },
+                "direction": "column"
+              },
+              "direction": "column"
+            },
+            "second": {
+              "first": "Plot!1ys4quy",
+              "second": "Plot!2my164s",
+              "direction": "column"
+            },
+            "direction": "row"
+          }
+        },
+        {
+          "title": "Camera",
+          "layout": {
+            "first": "Image!1mbl5fz",
+            "second": {
+              "first": "Image!45dfsgs",
+              "second": "Image!1t5p0ae",
+              "direction": "column"
+            },
+            "direction": "row"
+          }
+        },
+        {
+          "title": "joy",
+          "layout": {
+            "first": "Plot!2qu0q0q",
+            "second": {
+              "first": "Plot!1ogz3vj",
+              "second": "Plot!3yeyyua",
+              "direction": "row"
+            },
+            "direction": "column"
+          }
+        },
+        {
+          "title": "",
+          "layout": {
+            "first": "Plot!m86r6f",
+            "second": "RawMessages!38pr24f",
+            "direction": "column"
+          }
+        }
+      ]
+    },
+    "Plot!m86r6f": {
+      "paths": [
+        {
+          "timestampMethod": "receiveTime",
+          "value": "/ackermann_cmd.drive.speed",
+          "enabled": true,
+          "color": "#4e98e2"
+        }
+      ],
+      "showXAxisLabels": true,
+      "showYAxisLabels": true,
+      "showLegend": true,
+      "legendDisplay": "floating",
+      "showPlotValuesInLegend": false,
+      "isSynced": true,
+      "xAxisVal": "timestamp",
+      "sidebarDimension": 240
+    }
+  },
+  "globalVariables": {},
+  "userNodes": {},
+  "playbackConfig": {
+    "speed": 1
+  },
+  "layout": "Tab!2v2qr5t"
+}
