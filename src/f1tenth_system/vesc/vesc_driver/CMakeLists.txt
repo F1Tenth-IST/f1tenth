@@ -15,6 +15,8 @@ ament_auto_find_build_dependencies()
 
 find_package(Threads)
 
+find_package(asio_cmake_module REQUIRED)
+
 ###########
 ## Build ##
 ###########
