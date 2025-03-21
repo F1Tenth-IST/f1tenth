@@ -1,0 +1,24 @@
+[0.024s] Invoking command in '/home/jetson/f1tenth/src/f1tenth_system/odom_to_path/build/odom_to_path': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/jetson/f1tenth/install/f1tenth_stack:/home/jetson/f1tenth/install/joy_teleop:/home/jetson/f1tenth/install/slam:/home/jetson/f1tenth/install/ros2_jetson_stats:/home/jetson/f1tenth/install/mouse_teleop:/home/jetson/f1tenth/install/key_teleop:/opt/ros/humble /usr/bin/cmake --build /home/jetson/f1tenth/src/f1tenth_system/odom_to_path/build/odom_to_path -- -j6 -l6
+[0.129s] [35m[1mConsolidate compiler generated dependencies of target odom_to_path[0m
+[0.176s] [ 50%] [32mBuilding CXX object CMakeFiles/odom_to_path.dir/src/path_gen.cpp.o[0m
+[17.715s] [100%] [32m[1mLinking CXX executable odom_to_path[0m
+[18.547s] [100%] Built target odom_to_path
+[18.575s] Invoked command in '/home/jetson/f1tenth/src/f1tenth_system/odom_to_path/build/odom_to_path' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/jetson/f1tenth/install/f1tenth_stack:/home/jetson/f1tenth/install/joy_teleop:/home/jetson/f1tenth/install/slam:/home/jetson/f1tenth/install/ros2_jetson_stats:/home/jetson/f1tenth/install/mouse_teleop:/home/jetson/f1tenth/install/key_teleop:/opt/ros/humble /usr/bin/cmake --build /home/jetson/f1tenth/src/f1tenth_system/odom_to_path/build/odom_to_path -- -j6 -l6
+[18.603s] Invoking command in '/home/jetson/f1tenth/src/f1tenth_system/odom_to_path/build/odom_to_path': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/jetson/f1tenth/install/f1tenth_stack:/home/jetson/f1tenth/install/joy_teleop:/home/jetson/f1tenth/install/slam:/home/jetson/f1tenth/install/ros2_jetson_stats:/home/jetson/f1tenth/install/mouse_teleop:/home/jetson/f1tenth/install/key_teleop:/opt/ros/humble /usr/bin/cmake --install /home/jetson/f1tenth/src/f1tenth_system/odom_to_path/build/odom_to_path
+[18.622s] -- Install configuration: ""
+[18.622s] -- Installing: /home/jetson/f1tenth/src/f1tenth_system/odom_to_path/install/odom_to_path/share/ament_index/resource_index/package_run_dependencies/odom_to_path
+[18.623s] -- Installing: /home/jetson/f1tenth/src/f1tenth_system/odom_to_path/install/odom_to_path/share/ament_index/resource_index/parent_prefix_path/odom_to_path
+[18.625s] -- Installing: /home/jetson/f1tenth/src/f1tenth_system/odom_to_path/install/odom_to_path/share/odom_to_path/environment/ament_prefix_path.sh
+[18.625s] -- Installing: /home/jetson/f1tenth/src/f1tenth_system/odom_to_path/install/odom_to_path/share/odom_to_path/environment/ament_prefix_path.dsv
+[18.626s] -- Installing: /home/jetson/f1tenth/src/f1tenth_system/odom_to_path/install/odom_to_path/share/odom_to_path/environment/path.sh
+[18.626s] -- Installing: /home/jetson/f1tenth/src/f1tenth_system/odom_to_path/install/odom_to_path/share/odom_to_path/environment/path.dsv
+[18.626s] -- Installing: /home/jetson/f1tenth/src/f1tenth_system/odom_to_path/install/odom_to_path/share/odom_to_path/local_setup.bash
+[18.627s] -- Installing: /home/jetson/f1tenth/src/f1tenth_system/odom_to_path/install/odom_to_path/share/odom_to_path/local_setup.sh
+[18.628s] -- Installing: /home/jetson/f1tenth/src/f1tenth_system/odom_to_path/install/odom_to_path/share/odom_to_path/local_setup.zsh
+[18.629s] -- Installing: /home/jetson/f1tenth/src/f1tenth_system/odom_to_path/install/odom_to_path/share/odom_to_path/local_setup.dsv
+[18.630s] -- Installing: /home/jetson/f1tenth/src/f1tenth_system/odom_to_path/install/odom_to_path/share/odom_to_path/package.dsv
+[18.631s] -- Installing: /home/jetson/f1tenth/src/f1tenth_system/odom_to_path/install/odom_to_path/share/ament_index/resource_index/packages/odom_to_path
+[18.631s] -- Installing: /home/jetson/f1tenth/src/f1tenth_system/odom_to_path/install/odom_to_path/share/odom_to_path/cmake/odom_to_pathConfig.cmake
+[18.631s] -- Installing: /home/jetson/f1tenth/src/f1tenth_system/odom_to_path/install/odom_to_path/share/odom_to_path/cmake/odom_to_pathConfig-version.cmake
+[18.632s] -- Installing: /home/jetson/f1tenth/src/f1tenth_system/odom_to_path/install/odom_to_path/share/odom_to_path/package.xml
+[18.637s] Invoked command in '/home/jetson/f1tenth/src/f1tenth_system/odom_to_path/build/odom_to_path' returned '0': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/home/jetson/f1tenth/install/f1tenth_stack:/home/jetson/f1tenth/install/joy_teleop:/home/jetson/f1tenth/install/slam:/home/jetson/f1tenth/install/ros2_jetson_stats:/home/jetson/f1tenth/install/mouse_teleop:/home/jetson/f1tenth/install/key_teleop:/opt/ros/humble /usr/bin/cmake --install /home/jetson/f1tenth/src/f1tenth_system/odom_to_path/build/odom_to_path
