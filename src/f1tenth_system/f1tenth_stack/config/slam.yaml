@@ -4,5 +4,9 @@ slam_toolbox:
     map_frame : "world"
     base_frame : "laser"
     scan_topic : "/scan"
-    scan_queue_size : 2
+    scan_queue_size : 0
+    min_laser_range : 0.06 
+    max_laser_range : 5.6
     use_scan_matching : true
+    #use_sim_time : true
+    #tf_buffer_duration : 9999999999999999999999999999999999999999999999999999999999999999999999999999999.0
