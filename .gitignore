@@ -10,3 +10,4 @@ log/*
 **/*.pyc
 rosbag/*
 *.o
+*.a
