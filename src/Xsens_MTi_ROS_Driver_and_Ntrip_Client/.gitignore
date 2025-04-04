@@ -2,4 +2,4 @@ build/*
 install/*
 log/*
 .vscode/*
-src/xsens_mti_ros2_driver/lib/xspublic/xscommon/*
+src/xsens_mti_ros2_driver/lib/xspublic/*
