@@ -6,8 +6,26 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 # find dependencies
-find_package(ament_cmake REQUIRED)
-find_package(rclcpp REQUIRED)
+find_package(ament_cmake_auto REQUIRED)
+#find_package(rclcpp REQUIRED)
+ament_auto_find_build_dependencies()
+
+#add_executable(mpc src/main.cpp)
+#ament_target_dependencies(mpc
+#  rclcpp
+#)
+# nodes library
+include_directories(${ACADOS_INSTALL_DIR}/include)
+
+ament_auto_add_library(${PROJECT_NAME} SHARED
+  src/main.cpp
+)
+
+# Adicionar o diretório do mpc_solver
+
+
+add_subdirectory(mpc_solver)
+
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
