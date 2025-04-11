@@ -30,6 +30,12 @@ public:
         // reference_sub_ = nh.subscribe("reference_trajectory", 10, &MPCNode::referenceCallback, this);
         create_reference_trajectory();
 
+        if (mpc_model_acados_create(capsule) != 0)
+        {
+            RCLCPP_ERROR(this->get_logger(), "Failed to create ACADOS solver.");
+            rclcpp::shutdown();
+        }
+
         // Initialize ACADOS solver
         nlp_config_ = mpc_model_acados_get_nlp_config(capsule);
         nlp_dims_ = mpc_model_acados_get_nlp_dims(capsule);
@@ -38,11 +44,7 @@ public:
         nlp_solver_ = mpc_model_acados_get_nlp_solver(capsule);
         nlp_opts_ = mpc_model_acados_get_nlp_opts(capsule);
 
-        if (mpc_model_acados_create(capsule) != 0)
-        {
-            RCLCPP_ERROR(this->get_logger(), "Failed to create ACADOS solver.");
-            rclcpp::shutdown();
-        }
+        
 
         // Set up a timer to solve MPC at a fixed frequency
         timer_ = this->create_wall_timer(
@@ -84,7 +86,8 @@ public:
     void create_reference_trajectory()
     {
         // Create a simple reference trajectory for testing
-#define N_total 100
+        #define N_total 100
+
         double n = (2 * M_PI) / N_total;
         double x_traj[N_total], y_traj[N_total], psi_traj[N_total];
         size_t index = 0;
@@ -122,7 +125,9 @@ public:
 
     void solveMPC()
     {
-        #define N 10                 // Prediction horizon
+        #define N MPC_MODEL_N                 // Prediction horizon
+        //int N = mpc_model_acados_get_N(capsule);
+
 
         if (std::isnan(current_state_.x) || std::isnan(current_state_.y) || reference_trajectory_.x.empty() || reference_trajectory_.y.empty())
         {
@@ -172,7 +177,7 @@ public:
         }
 
         // 5. Set up the ACADOS solver
-        for (size_t k = 0; k < N; ++k)
+        for (size_t k = 0; k <= N; ++k)
         {
             std::vector<double> yref_k = {
                 x_ref_step[k],
@@ -181,20 +186,22 @@ public:
                 std::cos(psi_ref[k]),
                 0.0,
                 v_ref};
-            ocp_nlp_set(nlp_solver_, k, "yref", yref_k.data()); 
+            ocp_nlp_cost_model_set(nlp_config_, nlp_dims_,nlp_in_, k, "yref", yref_k.data());
         }
 
         // Set terminal reference
-        std::vector<double> yref_e = {
+        /* std::vector<double> yref_e = {
             x_ref_step.back(),
             y_ref_step.back(),
             std::sin(psi_ref.back()),
             std::cos(psi_ref.back())};
-        ocp_nlp_set(nlp_solver_, N, "yref_e", yref_e.data());
+        ocp_nlp_cost_model_set(nlp_config_, nlp_dims_,nlp_in_, N, "yref_e", yref_e.data()); */
+        //ocp_nlp_cost_model_set(nlp_config_, nlp_dims_,nlp_in_, "yref_e", yref_e.data());
+
 
         // Set initial state constraints
-        ocp_nlp_set(nlp_solver_, 0, "lbx", current_state_vector_.data());
-        ocp_nlp_set(nlp_solver_, 0, "ubx", current_state_vector_.data());
+        ocp_nlp_constraints_model_set(nlp_config_, nlp_dims_,nlp_in_, 0, "lbx", current_state_vector_.data());
+        ocp_nlp_constraints_model_set(nlp_config_, nlp_dims_,nlp_in_, 0, "ubx", current_state_vector_.data());
 
         // Solve the MPC problem
         int status = mpc_model_acados_solve(capsule);
@@ -206,7 +213,7 @@ public:
 
         // Get control output
         std::array<double, 2> control_output;
-        ocp_nlp_get(nlp_solver_, "u", control_output.data()); // Retrieve control output
+        ocp_nlp_out_get(nlp_config_, nlp_dims_,nlp_out_, 0, "u", control_output.data()); // Retrieve control output
         
         ackermann_msgs::msg::AckermannDriveStamped control_msg;
         control_msg.header.stamp = this->get_clock()->now();

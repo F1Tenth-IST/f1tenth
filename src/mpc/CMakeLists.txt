@@ -39,9 +39,9 @@ include_directories(
 
 link_directories($ENV{ACADOS_INSTALL_DIR}/lib)
 
-#set(BUILD_ACADOS_SOLVER_LIB ON CACHE INTERNAL "")
-#add_subdirectory(mpc_solver ${CMAKE_CURRENT_BINARY_DIR}/mpc_solver_build EXCLUDE_FROM_ALL)
-
+set(BUILD_ACADOS_SOLVER_LIB ON CACHE INTERNAL "")
+add_subdirectory(mpc_solver ${CMAKE_CURRENT_BINARY_DIR}/mpc_solver EXCLUDE_FROM_ALL)
+#add_library(acados_solver_mpc_model SHARED ...)
 
 ament_auto_add_executable(mpc
   src/main.cpp
@@ -66,17 +66,20 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 #  ${CMAKE_CURRENT_SOURCE_DIR}/mpc_solver  # Add this line
 #)
 
+#add_library(acados_solver_mpc_model SHARED ...)
+
 
 # Link ACADOS libraries to the target
 target_link_libraries(${PROJECT_NAME}
   acados
   hpipm
   blasfeo
+  acados_solver_mpc_model
 )
 
 # Adicionar o diretório do mpc_solver
-set(BUILD_ACADOS_SOLVER_LIB ON CACHE INTERNAL "")
-add_subdirectory(mpc_solver)
+#set(BUILD_ACADOS_SOLVER_LIB ON CACHE INTERNAL "")
+#add_subdirectory(mpc_solver)
 
 
 # Install the executable
@@ -96,5 +99,13 @@ if(BUILD_TESTING)
   set(ament_cmake_cpplint_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
 endif()
+
+# Copy the shared library manually into the install/lib/ directory
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_INSTALL_PREFIX}/lib
+  COMMAND ${CMAKE_COMMAND} -E copy
+    ${CMAKE_CURRENT_BINARY_DIR}/mpc_solver/libacados_solver_mpc_model.so
+    ${CMAKE_INSTALL_PREFIX}/lib/libacados_solver_mpc_model.so
+)
 
 ament_package()
