@@ -200,8 +200,8 @@ public:
 
 
         // Set initial state constraints
-        ocp_nlp_constraints_model_set(nlp_config_, nlp_dims_,nlp_in_, 0, "lbx", current_state_vector_.data());
-        ocp_nlp_constraints_model_set(nlp_config_, nlp_dims_,nlp_in_, 0, "ubx", current_state_vector_.data());
+        ocp_nlp_constraints_model_set(nlp_config_, nlp_dims_, nlp_in_, nlp_out_, 0, "lbx", current_state_vector_.data());
+        ocp_nlp_constraints_model_set(nlp_config_, nlp_dims_, nlp_in_, nlp_out_, 0, "ubx", current_state_vector_.data());
 
         // Solve the MPC problem
         int status = mpc_model_acados_solve(capsule);
