@@ -23,22 +23,51 @@ delta_max = abs(servo_max/servo_gain); % Ângulo máximo de direção (radianos)
 
 v_ref = 1.0;  % m/s
 
+
+
 N_total = 100;  % Numeros de pontos traj
-n = (2*pi)/N_total;
-x_traj = 2.5 * cos(0:n:2*pi);
-y_traj = -1.75 - 1.75 * sin(0:n:2*pi);
-dx = diff(x_traj);              % tamanho N-1
-dy = diff(y_traj);              % tamanho N-1
-psi_traj =atan2(dy, dx);           % heading entre pontos consecutivos
-psi_traj(end+1) = psi_traj(end);     % repetir o último valor → agora tamanho N
+theta = linspace(0, 2*pi, N_total+1); 
 
-%plot(x_traj, y_traj, 'r.', 'MarkerSize', 10);
-%axis equal
+% Coordenadas elípticas
+x_traj = 2.5 * cos(theta);
+y_traj = -1.75 - 1.75 * sin(theta);
 
+% Parametrização por arco: s (cumulativa)
+ds = sqrt(diff(x_traj).^2 + diff(y_traj).^2);
+s = [0, cumsum(ds)];
+
+% Criar splines cúbicas para x(s) e y(s)
+x_spline = csape(s, x_traj, 'periodic');
+y_spline = csape(s, y_traj, 'periodic');
+
+% Derivadas
+s_mid = (s(1:end-1) + s(2:end)) / 2;  % pontos médios → mais estável
+dx = ppval(fnder(x_spline, 1), s_mid);
+dy = ppval(fnder(y_spline, 1), s_mid);
+ddx = ppval(fnder(x_spline, 2), s_mid);
+ddy = ppval(fnder(y_spline, 2), s_mid);
+kappa = (dx .* ddy - dy .* ddx) ./ (dx.^2 + dy.^2).^(3/2);
+
+% Heading e curvatura
+%psi = atan2(dy, dx);
+kappa = (dx .* ddy - dy .* ddx) ./ (dx.^2 + dy.^2).^(3/2);
+
+v_ref=ones(1,N_total)*v_ref; %velocidade referencia
+
+figure;
+plot(s_mid, kappa);
+xlabel('s [m]');
+ylabel('\kappa(s) [1/m]');
+title('Curvatura da trajetória');
+grid on;
+
+%estados do mpc
+% modelo [s, n, u, vx, vy, r, theta, throttle]
+% controlo [theta, throttle]
 
 
 % Parâmetros do MPC
-Q = diag([10, 10, 0, 1, 1]);  % [x, y, psi, theta, v]
+Q = diag([1, 1, 1,  1 ,1, 1]);  % [s, n, u, vx, vy, r, theta, throttle]
 R = diag([0.1, 0.1]);       % Ponderação dos controles
 
 check_acados_requirements()
@@ -244,7 +273,7 @@ x(5)=v;
 x_sim = x + Ts * [
     v * cos(psi);        % dx/dt
     v * sin(psi);        % dy/dt
-    (v / L) * tan(-delta); % dyaw/dt
+    (v / L) * tan(delta); % dyaw/dt
     0                     % dtheta/dt
     0                     % dv/dt = 0 (v é entrada direta)
     ];

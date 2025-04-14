@@ -18,13 +18,17 @@ function solver = setup_ocp(N, Ts, Q, R, delta_max, v_max)
 
     L = 0.35;
 
-    f_expl = [ ...
-        u(2)*cos(x(3));        % dx/dt
-        u(2)*sin(x(3));        % dy/dt
-        (u(2)/L)*tan(-u(1));    % dpsi/dt
-        0;
-        0];                    % dtheta e dv são nulos (v é entrada direta)
-
+   f_expl = [
+    (vx * cos(x(3)) - vy * sin(x(3))) / (1 - x(2) * kappa);  % ṡ
+    vx * sin(x(3)) + vy * cos(x(3));                         % ṅ
+    x(6) - kappa * f_expl(1);                                % μ̇ = r - κ ṡ
+    (1/m) * (Fx - Fy_f * sin(x(7)) + m * x(5) * x(6));       % v̇x
+    (1/m) * (Fy_r + Fy_f * cos(x(7)) - m * x(4) * x(6));     % v̇y
+    (1/I_z) * (Fy_f * L_f * cos(x(7)) - Fy_r * L_r);         % ṙ
+    u(1);                                                    % δ̇
+    u(2)                                                     % Ṫ
+    ];
+   
     model.x = x;
     model.u = u;
     %model.p = p;

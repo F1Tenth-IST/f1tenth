@@ -26,7 +26,7 @@ v_ref = 1.0;  % m/s
 N_total = 100;  % Numeros de pontos traj
 n = (2*pi)/N_total;
 x_traj = 2.5 * cos(0:n:2*pi);
-y_traj = -1.75 - 1.75 * sin(0:n:2*pi);
+y_traj = 1.75 - 1.75 * sin(0:n:2*pi);
 dx = diff(x_traj);              % tamanho N-1
 dy = diff(y_traj);              % tamanho N-1
 psi_traj =atan2(dy, dx);           % heading entre pontos consecutivos
@@ -38,7 +38,7 @@ psi_traj(end+1) = psi_traj(end);     % repetir o último valor → agora tamanho
 
 
 % Parâmetros do MPC
-Q = diag([10, 10, 0, 1, 1]);  % [x, y, psi, theta, v]
+Q = diag([10, 10, 10, 10, 1]);  % [x, y, psi, theta, v]
 R = diag([0.1, 0.1]);       % Ponderação dos controles
 
 check_acados_requirements()
@@ -244,7 +244,7 @@ x(5)=v;
 x_sim = x + Ts * [
     v * cos(psi);        % dx/dt
     v * sin(psi);        % dy/dt
-    (v / L) * tan(-delta); % dyaw/dt
+    (v / L) * tan(delta); % dyaw/dt
     0                     % dtheta/dt
     0                     % dv/dt = 0 (v é entrada direta)
     ];
