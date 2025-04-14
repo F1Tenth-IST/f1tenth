@@ -194,6 +194,8 @@ def generate_launch_description():
         arguments=['0.0', '-0.01','0.0','-1.5708','0.0', '3.141', 'base_link', 'xsens']
     )
 
+    
+
 
 
 
@@ -244,9 +246,9 @@ def generate_launch_description():
     ld.add_action(static_tf_node_vesc)
     ld.add_action(static_tf_node_xsens)
 
-    ld.add_action(joy_node)
+    #ld.add_action(joy_node)
 
-    ld.add_action(joy_teleop_node)
+    #ld.add_action(joy_teleop_node)
     ld.add_action(ackermann_to_vesc_node)
     ld.add_action(vesc_to_odom_node)
     ld.add_action(vesc_driver_node)

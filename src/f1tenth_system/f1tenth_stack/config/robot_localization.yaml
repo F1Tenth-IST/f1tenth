@@ -9,7 +9,7 @@ ekf_filter_node:
     sensor_timeout: 2.0 # segundo de espera antes de declarar timeout
     publish_acceleration: True
     print_diagnostics: True
-    use_sim_time: True
+    #use_sim_time: True
     #transform_timeout: 0.1
     
     odom0: "vesc/odom"
