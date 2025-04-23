@@ -7,7 +7,7 @@ close all
 
 compile_solver=true;
 
-Ts = 1/20;      % Tempo de amostragem (20 Hz)
+Ts = 1/10;      % Tempo de amostragem (20 Hz)
 T_total = 20; % Tempo de sim
 % Definir o horizonte de predição
 N = 10; % Horizonte do MPC
@@ -23,51 +23,23 @@ delta_max = abs(servo_max/servo_gain); % Ângulo máximo de direção (radianos)
 
 v_ref = 1.0;  % m/s
 
+N_total = 10000;  % Numeros de pontos traj
+n = (2*pi)/N_total;
+x_traj = 2.5 * cos(0:n:2*pi);
+y_traj = -1.75 - 1.75 * sin(0:n:2*pi);
+dx = diff(x_traj);              % tamanho N-1
+dy = diff(y_traj);              % tamanho N-1
+psi_traj =atan2(dy, dx);           % heading entre pontos consecutivos
+psi_traj(end+1) = psi_traj(end);     % repetir o último valor → agora tamanho N
 
+figure
+plot(x_traj, y_traj, 'r.', 'MarkerSize', 10);
+axis equal
 
-N_total = 100;  % Numeros de pontos traj
-theta = linspace(0, 2*pi, N_total+1); 
-
-% Coordenadas elípticas
-x_traj = 2.5 * cos(theta);
-y_traj = -1.75 - 1.75 * sin(theta);
-
-% Parametrização por arco: s (cumulativa)
-ds = sqrt(diff(x_traj).^2 + diff(y_traj).^2);
-s = [0, cumsum(ds)];
-
-% Criar splines cúbicas para x(s) e y(s)
-x_spline = csape(s, x_traj, 'periodic');
-y_spline = csape(s, y_traj, 'periodic');
-
-% Derivadas
-s_mid = (s(1:end-1) + s(2:end)) / 2;  % pontos médios → mais estável
-dx = ppval(fnder(x_spline, 1), s_mid);
-dy = ppval(fnder(y_spline, 1), s_mid);
-ddx = ppval(fnder(x_spline, 2), s_mid);
-ddy = ppval(fnder(y_spline, 2), s_mid);
-kappa = (dx .* ddy - dy .* ddx) ./ (dx.^2 + dy.^2).^(3/2);
-
-% Heading e curvatura
-%psi = atan2(dy, dx);
-kappa = (dx .* ddy - dy .* ddx) ./ (dx.^2 + dy.^2).^(3/2);
-
-v_ref=ones(1,N_total)*v_ref; %velocidade referencia
-
-figure;
-plot(s_mid, kappa);
-xlabel('s [m]');
-ylabel('\kappa(s) [1/m]');
-title('Curvatura da trajetória');
-grid on;
-
-%estados do mpc
-% modelo [s, n, u, vx, vy, r, theta, throttle]
-% controlo [theta, throttle]
 
 
 % Parâmetros do MPC
-Q = diag([1, 1, 1,  1 ,1, 1]);  % [s, n, u, vx, vy, r, theta, throttle]
+Q = diag([10, 10, 1, 1, 1]);  % [x, y, psi, theta, v]
 R = diag([0.1, 0.1]);       % Ponderação dos controles
 
 check_acados_requirements()
@@ -113,10 +85,10 @@ figure; hold on; grid on;
 plot(x_traj, y_traj, 'r--', 'LineWidth', 1.5);
 %traj = plot(x(1), x(2), 'bo-', 'LineWidth', 2);
 % Seta de orientação
-heading_arrow = quiver(x(1), x(2), cos(x(3)), sin(x(3)), 0.5, 'b', 'LineWidth', 2, 'MaxHeadSize', 2)
+heading_arrow = quiver(x(1), x(2), cos(x(3)), sin(x(3)), 0.5, 'b', 'LineWidth', 2, 'MaxHeadSize', 2);
 traj_ref = plot(x_traj(1:N), y_traj(1:N), 'y--', 'LineWidth', 1.5);
 xlabel('x [m]'); ylabel('y [m]');
-title('MPC rodando em loop');
+title('Sim MPC');
 legend('Trajetória de referência', 'Trajetória do veículo');
 xlim([-3,3])
 axis equal
@@ -125,15 +97,15 @@ figure;
 sgtitle('Estados');
 subplot(3,1,1);
 p_angle=plot(0, 0, 'b-', 'LineWidth', 2);
-xlabel('Tempo [s]');
+xlabel('Step');
 ylabel('Ângulo de direção [rad]');
 subplot(3,1,2);
 p_v=plot(0, 0, 'b-', 'LineWidth', 2);
-xlabel('Tempo [s]');
+xlabel('Step');
 ylabel('Velocidade [m/s]');
 subplot(3,1,3);
 p_psi=plot(0, 0, 'b-', 'LineWidth', 2);
-xlabel('Tempo [s]');
+xlabel('Step');
 ylabel('PSI [rad]');
 
 
@@ -142,38 +114,44 @@ figure;
 sgtitle('Inputs');
 subplot(2,1,1);
 p_u1=plot(0, 0, 'b-', 'LineWidth', 2);
-xlabel('Tempo [s]');
+xlabel('Step');
 ylabel('Ângulo de direção [rad]');
 subplot(2,1,2);
 p_u2=plot(0, 0, 'b-', 'LineWidth', 2);
 ylabel('Velocidade [m/s]');
-xlabel('Tempo [s]');
+xlabel('Step');
 t_exec=0;
 
 % Loop principal do MPC
 for t_idx = 1:T_total/Ts-1
     % Trajetória de referência para o horizonte atual
+    
 
-        % 1. Encontrar o ponto mais próximo da posição atual
+   % 1. Find the closest point to the current position
     distances = sqrt((x_traj - x(1)).^2 + (y_traj - x(2)).^2);
     [~, idx_ref_start] = min(distances);
+    % 2. Compute reference points by walking along the trajectory
+    x_ref_step = zeros(1, N);
+    y_ref_step = zeros(1, N);
+    psi_ref = zeros(1, N);
+    idx = idx_ref_start;
+    dist_accum = 0;
+
+    for i = 1:N
+        target_dist = (i - 1) * Ts * v_ref;
     
-    % 2. Calcular distância acumulada da trajetória
-    dx = diff(x_traj);
-    dy = diff(y_traj);
-    ds = sqrt(dx.^2 + dy.^2);
-    s_traj = [0, cumsum(ds)];
-    traj_length = s_traj(end);
+        while dist_accum < target_dist
+            next_idx = mod(idx, length(x_traj)) + 1;
+            dx = x_traj(next_idx) - x_traj(idx);
+            dy = y_traj(next_idx) - y_traj(idx);
+            dist_accum = dist_accum + sqrt(dx^2 + dy^2);
+            idx = next_idx;
+        end
     
-    % 3. Criar vetor de distâncias alvo a partir da posição inicial
-    s0 = s_traj(idx_ref_start);
-    s_ref = v_ref * (0:Ts:(N-1)*Ts);
-    s_target = mod(s0 + s_ref, traj_length);  % wrap-around com mod
-    
-    % 4. Interpolação circular para encontrar os pontos correspondentes
-    x_ref_step = interp1(s_traj, x_traj, s_target, 'linear', 'extrap')';
-    y_ref_step = interp1(s_traj, y_traj, s_target, 'linear', 'extrap')';
-    psi_ref = interp1(s_traj, psi_traj, s_target, 'linear', 'extrap')';
+        x_ref_step(i) = x_traj(idx);
+        y_ref_step(i) = y_traj(idx);
+        psi_ref(i) = psi_traj(idx);
+    end
 
     
 
@@ -192,6 +170,8 @@ for t_idx = 1:T_total/Ts-1
 
     %solver.set('yref_e', [x_ref_step(end); y_ref_step(end); 0; 0; v_ref]);
     %solver.set(N, 'p', [x_ref_step(end); y_ref_step(end); v_ref]);
+    
+    
     solver.set('cost_y_ref_e', [x_ref_step(end); y_ref_step(end);sin(psi_ref(k+1));cos(psi_ref(k+1))]);
 
 
@@ -250,12 +230,12 @@ ylabel("Tempo[ms]")
 % figure;
 % subplot(2,1,1);
 % plot(1:T_total, history(:,3), 'b-', 'LineWidth', 2);
-% xlabel('Tempo [s]');
+% xlabel('Step');
 % ylabel('Ângulo de direção [rad]');
 % title('Ângulo de direção do veículo');
 % subplot(2,1,2);
 % plot(1:T_total, history(:,4), 'b-', 'LineWidth', 2);
-% xlabel('Tempo [s]');
+% xlabel('Step');
 % ylabel('Velocidade [m/s]');
 % title('Velocidade do veículo');
 
@@ -273,7 +253,7 @@ x(5)=v;
 x_sim = x + Ts * [
     v * cos(psi);        % dx/dt
     v * sin(psi);        % dy/dt
-    (v / L) * tan(delta); % dyaw/dt
+    (v / L) * tan(-delta); % dyaw/dt
     0                     % dtheta/dt
     0                     % dv/dt = 0 (v é entrada direta)
     ];

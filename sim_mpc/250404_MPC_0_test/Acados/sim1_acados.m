@@ -1,7 +1,7 @@
 
 %speed_to_erpm_gain  = 4277.5
 %speed_to_duty (m/s) = 0.0602
-close all
+%close all
 %
 
 
@@ -23,7 +23,7 @@ delta_max = abs(servo_max/servo_gain); % Ângulo máximo de direção (radianos)
 
 v_ref = 1.0;  % m/s
 
-N_total = 100;  % Numeros de pontos traj
+N_total = 10000;  % Numeros de pontos traj
 n = (2*pi)/N_total;
 x_traj = 2.5 * cos(0:n:2*pi);
 y_traj = -1.75 - 1.75 * sin(0:n:2*pi);
@@ -32,13 +32,14 @@ dy = diff(y_traj);              % tamanho N-1
 psi_traj =atan2(dy, dx);           % heading entre pontos consecutivos
 psi_traj(end+1) = psi_traj(end);     % repetir o último valor → agora tamanho N
 
-%plot(x_traj, y_traj, 'r.', 'MarkerSize', 10);
-%axis equal
+figure
+plot(x_traj, y_traj, 'r.', 'MarkerSize', 10);
+axis equal
 
 
 
 % Parâmetros do MPC
-Q = diag([10, 10, 0, 1, 1]);  % [x, y, psi, theta, v]
+Q = diag([10, 10, 1, 1, 1]);  % [x, y, psi, theta, v]
 R = diag([0.1, 0.1]);       % Ponderação dos controles
 
 check_acados_requirements()
@@ -84,10 +85,10 @@ figure; hold on; grid on;
 plot(x_traj, y_traj, 'r--', 'LineWidth', 1.5);
 %traj = plot(x(1), x(2), 'bo-', 'LineWidth', 2);
 % Seta de orientação
-heading_arrow = quiver(x(1), x(2), cos(x(3)), sin(x(3)), 0.5, 'b', 'LineWidth', 2, 'MaxHeadSize', 2)
+heading_arrow = quiver(x(1), x(2), cos(x(3)), sin(x(3)), 0.5, 'b', 'LineWidth', 2, 'MaxHeadSize', 2);
 traj_ref = plot(x_traj(1:N), y_traj(1:N), 'y--', 'LineWidth', 1.5);
 xlabel('x [m]'); ylabel('y [m]');
-title('MPC rodando em loop');
+title('Sim MPC');
 legend('Trajetória de referência', 'Trajetória do veículo');
 xlim([-3,3])
 axis equal
@@ -96,15 +97,15 @@ figure;
 sgtitle('Estados');
 subplot(3,1,1);
 p_angle=plot(0, 0, 'b-', 'LineWidth', 2);
-xlabel('Tempo [s]');
+xlabel('Step');
 ylabel('Ângulo de direção [rad]');
 subplot(3,1,2);
 p_v=plot(0, 0, 'b-', 'LineWidth', 2);
-xlabel('Tempo [s]');
+xlabel('Step');
 ylabel('Velocidade [m/s]');
 subplot(3,1,3);
 p_psi=plot(0, 0, 'b-', 'LineWidth', 2);
-xlabel('Tempo [s]');
+xlabel('Step');
 ylabel('PSI [rad]');
 
 
@@ -113,12 +114,12 @@ figure;
 sgtitle('Inputs');
 subplot(2,1,1);
 p_u1=plot(0, 0, 'b-', 'LineWidth', 2);
-xlabel('Tempo [s]');
+xlabel('Step');
 ylabel('Ângulo de direção [rad]');
 subplot(2,1,2);
 p_u2=plot(0, 0, 'b-', 'LineWidth', 2);
 ylabel('Velocidade [m/s]');
-xlabel('Tempo [s]');
+xlabel('Step');
 t_exec=0;
 
 % Loop principal do MPC
@@ -221,12 +222,12 @@ ylabel("Tempo[ms]")
 % figure;
 % subplot(2,1,1);
 % plot(1:T_total, history(:,3), 'b-', 'LineWidth', 2);
-% xlabel('Tempo [s]');
+% xlabel('Step');
 % ylabel('Ângulo de direção [rad]');
 % title('Ângulo de direção do veículo');
 % subplot(2,1,2);
 % plot(1:T_total, history(:,4), 'b-', 'LineWidth', 2);
-% xlabel('Tempo [s]');
+% xlabel('Step');
 % ylabel('Velocidade [m/s]');
 % title('Velocidade do veículo');
 

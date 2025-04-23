@@ -206,7 +206,7 @@
 				[
 					0,
 					0,
-					0,
+					1,
 					0,
 					0,
 					0
@@ -215,7 +215,7 @@
 					0,
 					0,
 					0,
-					0,
+					1,
 					0,
 					0
 				],
@@ -256,7 +256,7 @@
 				[
 					0,
 					0,
-					0,
+					1,
 					0,
 					0,
 					0
@@ -265,7 +265,7 @@
 					0,
 					0,
 					0,
-					0,
+					1,
 					0,
 					0
 				],
@@ -302,14 +302,14 @@
 				[
 					0,
 					0,
-					0,
+					1,
 					0
 				],
 				[
 					0,
 					0,
 					0,
-					0
+					1
 				]
 		],
 		"Zl":[],
@@ -445,7 +445,7 @@
 	"simulink_opts":[],
 	"solver_options":{
 		"N_horizon":10,
-		"Tsim":0.05,
+		"Tsim":0.1,
 		"adaptive_levenberg_marquardt_lam":5,
 		"adaptive_levenberg_marquardt_mu0":0.001,
 		"adaptive_levenberg_marquardt_mu_min":1e-16,
@@ -456,16 +456,16 @@
 		"compile_interface":[],
 		"cost_discretization":"EULER",
 		"cost_scaling":[
-			0.05,
-			0.05,
-			0.05,
-			0.05,
-			0.05,
-			0.05,
-			0.05,
-			0.05,
-			0.05,
-			0.05,
+			0.1,
+			0.1,
+			0.1,
+			0.1,
+			0.1,
+			0.1,
+			0.1,
+			0.1,
+			0.1,
+			0.1,
 			1
 		],
 		"custom_templates":[],
@@ -541,16 +541,16 @@
 		"search_direction_mode":"NOMINAL_QP",
 		"shooting_nodes":[
 			0,
-			0.05,
 			0.1,
-			0.15,
 			0.2,
-			0.25,
 			0.3,
-			0.35,
 			0.4,
-			0.45,
-			0.4999999999999999
+			0.5,
+			0.6,
+			0.7,
+			0.7999999999999999,
+			0.8999999999999999,
+			0.9999999999999999
 		],
 		"sim_method_detect_gnsf":[],
 		"sim_method_jac_reuse":[
@@ -594,18 +594,18 @@
 		"solution_sens_qp_t_lam_min":1e-09,
 		"store_iterates":false,
 		"tau_min":0,
-		"tf":0.5,
+		"tf":1,
 		"time_steps":[
-			0.05,
-			0.05,
-			0.05,
-			0.05,
-			0.05,
-			0.05,
-			0.05,
-			0.05,
-			0.05,
-			0.05
+			0.1,
+			0.1,
+			0.1,
+			0.1,
+			0.1,
+			0.1,
+			0.1,
+			0.1,
+			0.1,
+			0.1
 		],
 		"timeout_heuristic":"ZERO",
 		"timeout_max_time":0,

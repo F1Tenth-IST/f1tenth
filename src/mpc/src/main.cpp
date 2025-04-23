@@ -58,28 +58,30 @@ public:
         nlp_opts_ = mpc_model_acados_get_nlp_opts(capsule);
 
         // Set weights for the cost function
-        std::vector<double> cost_weights = {1.0, 1.0, 0.0, 0.0, 0.0, 0.0}; // Example weights for x, y, sin(psi), cos(psi), steering, velocity
+        //std::vector<double> cost_weights = {1.0, 1.0, 0.0, 0.0, 0.0, 0.0}; // Example weights for x, y, sin(psi), cos(psi), steering, velocity
+        /* std::vector<double> cost_weights = {10.0, 10.0, 1.0, 1.0, 1.0, 1.0}; // Example weights for x, y, sin(psi), cos(psi), steering, velocity
         Eigen::MatrixXd W = Eigen::MatrixXd::Zero(6, 6);
         W.diagonal() << cost_weights[0], cost_weights[1], cost_weights[2], cost_weights[3], cost_weights[4], cost_weights[5];
         for (size_t k = 0; k < N; k++)
         {
             ocp_nlp_cost_model_set(nlp_config_, nlp_dims_, nlp_in_, k, "W", W.data());
-        }
+        } */
         // Set final cost weights
-        std::vector<double> final_cost_weights = {1.0, 1.0, 0.0, 0.0}; // Example weights for x, y, sin(psi), cos(psi), steering, velocity
+        //std::vector<double> final_cost_weights = {1.0, 1.0, 0.0, 0.0}; // Example weights for x, y, sin(psi), cos(psi), steering, velocity
+        /* std::vector<double> final_cost_weights = {10.0, 10.0, 1.0, 1.0}; // Example weights for x, y, sin(psi), cos(psi), steering, velocity
         Eigen::MatrixXd Wf = Eigen::MatrixXd::Zero(4, 4);
         Wf.diagonal() << final_cost_weights[0], final_cost_weights[1], final_cost_weights[2], final_cost_weights[3];
-        ocp_nlp_cost_model_set(nlp_config_, nlp_dims_, nlp_in_, N, "W", Wf.data());
+        ocp_nlp_cost_model_set(nlp_config_, nlp_dims_, nlp_in_, N, "W", Wf.data()); */
 
         //nlp_config_ = ocp_nlp_config_create(nlp_dims_);
         //nlp_dims_ = ocp_nlp_dims_create(nlp_config_);
         //nlp_in_ = ocp_nlp_in_create(nlp_config_, nlp_dims_);
         //nlp_out_ = ocp_nlp_out_create(nlp_config_, nlp_dims_);
-        nlp_opts_ = ocp_nlp_solver_opts_create(nlp_config_, nlp_dims_);
-        nlp_solver_ = ocp_nlp_solver_create(nlp_config_, nlp_dims_, nlp_opts_, nlp_in_);
+        //nlp_opts_ = ocp_nlp_solver_opts_create(nlp_config_, nlp_dims_);
+        //nlp_solver_ = ocp_nlp_solver_create(nlp_config_, nlp_dims_, nlp_opts_, nlp_in_);
 
         //precompute
-        ocp_nlp_precompute(nlp_solver_, nlp_in_, nlp_out_);
+        //ocp_nlp_precompute(nlp_solver_, nlp_in_, nlp_out_);
 
         // Set up a timer to solve MPC at a fixed frequency
         timer_ = this->create_wall_timer(
@@ -123,7 +125,7 @@ public:
     void create_reference_trajectory()
     {
 // Create a simple reference trajectory for testing
-#define N_total 1000
+#define N_total 10000
 
         double n = (2 * M_PI) / N_total;
         double x_traj[N_total], y_traj[N_total], psi_traj[N_total];
@@ -236,7 +238,7 @@ public:
         ref_path_pub_->publish(ref_path);
 
         // 5. Set up the ACADOS solver
-        for (size_t k = 0; k <= N; ++k)
+        for (size_t k = 0; k < N; k++)
         {
             std::vector<double> yref_k = {
                 x_ref_step[k],
@@ -245,8 +247,16 @@ public:
                 std::cos(psi_ref[k]),
                 0.0,
                 v_ref};
-            ocp_nlp_cost_model_set(nlp_config_, nlp_dims_, nlp_in_, k, "yref", yref_k.data());
+            ocp_nlp_cost_model_set(nlp_config_, nlp_dims_, nlp_in_, k, "y_ref", yref_k.data());
         }
+
+         // set yref for the last stage
+        std::vector<double> yref_N = {
+            x_ref_step[9],
+            y_ref_step[9],
+            std::sin(psi_ref[9]),
+            std::cos(psi_ref[9])};
+        ocp_nlp_cost_model_set(nlp_config_, nlp_dims_, nlp_in_, N, "y_ref", yref_N.data());   
 
         // Set initial state constraints
         ocp_nlp_constraints_model_set(nlp_config_, nlp_dims_, nlp_in_, nlp_out_, 0, "lbx", current_state_vector_.data());
@@ -294,6 +304,19 @@ public:
         std_msgs::msg::Float64MultiArray control_array_msg;
         control_array_msg.data = {control_output[0], control_output[1]};
         control_pub_->publish(control_array_msg);
+
+        // Publish control vector
+        std::vector<double> control_vector(N * 2);
+        ocp_nlp_out_get(nlp_config_, nlp_dims_, nlp_out_, 0, "u", control_vector.data());
+        std::vector<double> control_vector_reshaped(N * 2);
+        for (size_t i = 0; i < N; ++i)
+        {
+            control_vector_reshaped[i * 2] = control_vector[i];
+            control_vector_reshaped[i * 2 + 1] = control_vector[i + N];
+        }
+        std_msgs::msg::Float64MultiArray control_vector_msg;
+        control_vector_msg.data = control_vector_reshaped;
+        control_pub_->publish(control_vector_msg);
     }
 
 private:

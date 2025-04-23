@@ -73,7 +73,7 @@ int mpc_model_acados_sim_create(mpc_model_sim_solver_capsule * capsule)
     const int np = MPC_MODEL_NP;
     bool tmp_bool;
 
-    double Tsim = 0.05;
+    double Tsim = 0.1;
 
     external_function_opts ext_fun_opts;
     external_function_opts_set_to_default(&ext_fun_opts);
