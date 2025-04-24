@@ -21,7 +21,7 @@ function solver = setup_ocp(N, Ts, Q, R, delta_max, v_max)
     f_expl = [ ...
         u(2)*cos(x(3));        % dx/dt
         u(2)*sin(x(3));        % dy/dt
-        (u(2)/L)*tan(-u(1));    % dpsi/dt
+        (u(2)/L)*tan(u(1));    % dpsi/dt
         0;
         0];                    % dtheta e dv são nulos (v é entrada direta)
 

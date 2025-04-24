@@ -253,7 +253,7 @@ x(5)=v;
 x_sim = x + Ts * [
     v * cos(psi);        % dx/dt
     v * sin(psi);        % dy/dt
-    (v / L) * tan(-delta); % dyaw/dt
+    (v / L) * tan(delta); % dyaw/dt
     0                     % dtheta/dt
     0                     % dv/dt = 0 (v é entrada direta)
     ];
