@@ -9,6 +9,7 @@ from launch.substitutions import LaunchConfiguration
 def generate_launch_description():
 
     zed_config = os.path.join(get_package_share_directory('f1tenth_stack'), 'config', 'zed2i.yaml')
+    zed_wrapper_dir = get_package_share_directory('zed_wrapper')
 
     return LaunchDescription([
         DeclareLaunchArgument(

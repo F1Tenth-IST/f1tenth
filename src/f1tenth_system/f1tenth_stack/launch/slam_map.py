@@ -48,7 +48,7 @@ def generate_launch_description():
 
     slam_node = Node(
         package='slam_toolbox',
-        executable='map_and_localization_slam_toolbox_node',
+        executable='sync_slam_toolbox_node',
         name='slam_toolbox',
         parameters=[LaunchConfiguration('slam_config')]
     )

@@ -1,6 +1,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include <ackermann_msgs/msg/ackermann_drive_stamped.hpp>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp> // para tf2::getYaw()
+#include <tf2/utils.hpp>
 #include <std_msgs/msg/float64.hpp>
 #include <std_msgs/msg/float64_multi_array.hpp>
 #include "nav_msgs/msg/odometry.hpp"
@@ -12,9 +13,14 @@
 #include <vector>
 
 // Include ACADOS headers
-
 #include "acados_c/ocp_nlp_interface.h"
+#include "acados_c/external_function_interface.h"
 #include "acados_solver_mpc_model.h"
+#include "acados/utils/print.h"
+#include "acados/utils/math.h"
+
+// blasfeo
+#include "blasfeo_d_aux_ext_dep.h"
 
 #define N MPC_MODEL_N // Prediction horizon
 
@@ -35,8 +41,11 @@ public:
         state_pub_ = this->create_publisher<std_msgs::msg::Float64MultiArray>("mpc/state_array", 10);
         control_pub_ = this->create_publisher<std_msgs::msg::Float64MultiArray>("mpc/control_array", 10);
 
+        control_vector_pub_ = this->create_publisher<std_msgs::msg::Float64MultiArray>("mpc/control_vector", 10);
+        state_vector_pub_ = this->create_publisher<std_msgs::msg::Float64MultiArray>("mpc/state_vector", 10);
+
         odomm_sub_ = this->create_subscription<nav_msgs::msg::Odometry>(
-            "/vesc/odom", 10, std::bind(&MPCNode::odomCallback, this, std::placeholders::_1));
+            "/odometry/filtered", 10, std::bind(&MPCNode::odomCallback, this, std::placeholders::_1));
 
         vesc_servo_sub_ = this->create_subscription<std_msgs::msg::Float64>(
             "/vesc/servo_position_command", 10, std::bind(&MPCNode::VescServoCallback, this, std::placeholders::_1));
@@ -105,7 +114,7 @@ public:
             msg->pose.pose.orientation.y,
             msg->pose.pose.orientation.z,
             msg->pose.pose.orientation.w);
-        current_state_.yaw = q.getAngle(); // Extract yaw from quaternion
+        current_state_.yaw = tf2::getYaw(q); // Correctly extract yaw from quaternion
         current_state_.v = msg->twist.twist.linear.x;
         //RCLCPP_INFO(this->get_logger(), "Current state: x=%f, y=%f, yaw=%f, v=%f", current_state_.x, current_state_.y, current_state_.yaw, current_state_.v);
     }
@@ -143,7 +152,7 @@ public:
         {
             double dx = x_traj[i + 1] - x_traj[i];
             double dy = y_traj[i + 1] - y_traj[i];
-            psi_traj[i] = atan2(dy, dx);
+            psi_traj[i] = atan2(dy, dx); // This is in radians
         }
 
         // Repeat the last heading value to match the size of x_traj and y_traj
@@ -259,12 +268,32 @@ public:
         ocp_nlp_cost_model_set(nlp_config_, nlp_dims_, nlp_in_, N, "y_ref", yref_N.data());   
 
         // Set initial state constraints
+        std::vector<double> current_state_vector_ = {
+            current_state_.x,
+            current_state_.y,
+            current_state_.yaw,
+            current_state_.theta,
+            current_state_.v};
         ocp_nlp_constraints_model_set(nlp_config_, nlp_dims_, nlp_in_, nlp_out_, 0, "lbx", current_state_vector_.data());
         ocp_nlp_constraints_model_set(nlp_config_, nlp_dims_, nlp_in_, nlp_out_, 0, "ubx", current_state_vector_.data());
+        RCLCPP_INFO(this->get_logger(), "Current state vector: %f, %f, %f, %f, %f", current_state_vector_[0], current_state_vector_[1], current_state_vector_[2], current_state_vector_[3], current_state_vector_[4]);
+        RCLCPP_INFO(this->get_logger(), "Reference state vector: %f, %f, %f, %f, %f", current_state_.x, current_state_.y, current_state_.yaw, current_state_.theta, current_state_.v);
 
         // Solve the MPC problem
-        int status = ocp_nlp_solve(nlp_solver_, nlp_in_, nlp_out_);
-        //int status = mpc_model_acados_solve(capsule);
+        //int status = ocp_nlp_solve(nlp_solver_, nlp_in_, nlp_out_);
+        int status = mpc_model_acados_solve(capsule);
+        //mpc_model_acados_print_stats(capsule);
+        /* std::vector<double> xtraj((N + 1) * 6);
+        std::vector<double> utraj(N * 2);
+        for (int ii = 0; ii <= N; ii++)
+            ocp_nlp_out_get(nlp_config_, nlp_dims_, nlp_out_, ii, "x", &xtraj[ii*6]);
+        for (int ii = 0; ii < N; ii++)
+            ocp_nlp_out_get(nlp_config_, nlp_dims_, nlp_out_, ii, "u", &utraj[ii*2]);
+
+        printf("\n--- xtraj ---\n");
+        d_print_exp_tran_mat( 6, N+1, xtraj.data(), 6);
+        printf("\n--- utraj ---\n");
+        d_print_exp_tran_mat( 2, N, utraj.data(), 2 ); */
         if (status != 0)
         {
             RCLCPP_ERROR(this->get_logger(), "ACADOS solver failed with status %d", status);
@@ -285,7 +314,7 @@ public:
         ackermann_msgs::msg::AckermannDriveStamped control_vesc_msg;
         control_vesc_msg.header.stamp = this->get_clock()->now();
         control_vesc_msg.header.frame_id = "base_link";
-        control_vesc_msg.drive.steering_angle = -control_output[0] * steering_angle_to_servo_gain;
+        control_vesc_msg.drive.steering_angle = control_output[0] * steering_angle_to_servo_gain + steering_angle_to_servo_offset;
         control_vesc_msg.drive.acceleration = control_output[1] * speed_to_duty;
 
         // Publish control output
@@ -307,16 +336,19 @@ public:
 
         // Publish control vector
         std::vector<double> control_vector(N * 2);
-        ocp_nlp_out_get(nlp_config_, nlp_dims_, nlp_out_, 0, "u", control_vector.data());
-        std::vector<double> control_vector_reshaped(N * 2);
-        for (size_t i = 0; i < N; ++i)
-        {
-            control_vector_reshaped[i * 2] = control_vector[i];
-            control_vector_reshaped[i * 2 + 1] = control_vector[i + N];
-        }
+        for (int ii = 0; ii < N; ii++)
+            ocp_nlp_out_get(nlp_config_, nlp_dims_, nlp_out_, ii, "u", &control_vector[ii * 2]);
         std_msgs::msg::Float64MultiArray control_vector_msg;
-        control_vector_msg.data = control_vector_reshaped;
-        control_pub_->publish(control_vector_msg);
+        control_vector_msg.data = control_vector;
+        control_vector_pub_->publish(control_vector_msg);
+
+        // Publish state vector
+        std::vector<double> state_vector((N + 1) * 6);
+        for (int ii = 0; ii <= N; ii++)
+            ocp_nlp_out_get(nlp_config_, nlp_dims_, nlp_out_, ii, "x", &state_vector[ii * 6]);
+        std_msgs::msg::Float64MultiArray state_vector_msg;
+        state_vector_msg.data = state_vector;
+        state_vector_pub_->publish(state_vector_msg);
     }
 
 private:
@@ -326,6 +358,9 @@ private:
     rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr reference_trajectory_pub_;
     rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr state_pub_;
     rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr control_pub_;
+    rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr state_vector_pub_;
+    rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr control_vector_pub_;
+    
 
     rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odomm_sub_;
     rclcpp::Subscription<std_msgs::msg::Float64>::SharedPtr vesc_servo_sub_;
@@ -352,13 +387,6 @@ private:
         double v;
     } current_state_;
 
-    std::array<std::reference_wrapper<double>, 5> current_state_vector_ = {
-        current_state_.x,
-        current_state_.y,
-        current_state_.yaw,
-        current_state_.theta,
-        current_state_.v
-    };
 
     struct ReferenceTrajectory
     {
@@ -379,42 +407,6 @@ private:
     ocp_nlp_out *nlp_out_;
     ocp_nlp_solver *nlp_solver_;
     void *nlp_opts_;
-
-    double linearInterpolation(const std::vector<double> &x, const std::vector<double> &y, double target_x)
-    {
-        if (x.size() != y.size() || x.empty())
-        {
-            throw std::invalid_argument("Input vectors must have the same size and cannot be empty.");
-        }
-
-        double total_range = x.back(); // s_traj começa em 0, então total_range = s_traj.back()
-
-        // Garantir que target_x está dentro do domínio [0, total_range)
-        target_x = std::fmod(target_x, total_range);
-        if (target_x < 0)
-            target_x += total_range; // garantir positivo
-
-        for (size_t i = 0; i < x.size() - 1; ++i)
-        {
-            if (target_x >= x[i] && target_x <= x[i + 1])
-            {
-                double t = (target_x - x[i]) / (x[i + 1] - x[i]);
-                return y[i] + t * (y[i + 1] - y[i]);
-            }
-        }
-
-        // Handle wrap-around: last point to first point
-        if (target_x >= x.back() || target_x < x.front())
-        {
-            double dx = (x.front() + total_range) - x.back(); // distancia correta no domínio circular
-            double t = (target_x - x.back()) / dx;
-            return y.back() + t * (y.front() - y.back());
-        }
-
-        // Should not happen
-        RCLCPP_WARN(rclcpp::get_logger("MPCNode"), "Target value is out of interpolation range. Returning the last valid value.");
-        return y.back();
-    }
 };
 
 int main(int argc, char **argv)
