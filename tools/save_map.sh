@@ -14,4 +14,8 @@ mkdir -p "$MAP_DIR"
 echo "[🗺️] Salvando mapa em: $MAP_NAME"
 
 # Executa o comando de salvamento
-ros2 run nav2_map_server map_saver_cli -f "$MAP_NAME"
+# ros2 run nav2_map_server map_saver_cli -f "$MAP_NAME"
+ros2 service call /slam_toolbox/serialize_map slam_toolbox/srv/SerializePoseGraph "{filename: '$MAP_NAME'}"
+
+ros2 service call /slam_toolbox/save_map slam_toolbox/srv/SaveMap "name:
+  data: '$MAP_NAME'"

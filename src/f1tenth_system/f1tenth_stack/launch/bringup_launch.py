@@ -73,7 +73,7 @@ def generate_launch_description():
     slam_config = os.path.join(
         get_package_share_directory('f1tenth_stack'),
         'config',
-        'slam.yaml'
+        'slam_loc.yaml'
     )
 
     mpc_config = os.path.join(
@@ -242,7 +242,7 @@ def generate_launch_description():
 
     slam_node = Node(
         package='slam_toolbox',
-        executable='map_and_localization_slam_toolbox_node',
+        executable='localization_slam_toolbox_node',
         name='slam_toolbox',
         parameters=[LaunchConfiguration('slam_config')]
     )
@@ -280,7 +280,8 @@ def generate_launch_description():
 
 
     ld.add_action(xsens_node)
-    #ld.add_action(slam_node)
+    
+    ld.add_action(slam_node)
 
     ld.add_action(mpc_node)
 

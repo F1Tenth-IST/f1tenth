@@ -85,10 +85,16 @@ def generate_launch_description():
         'xsens.yaml'
     )
 
-    slam_config = os.path.join(
+    slam_config_map = os.path.join(
         get_package_share_directory('f1tenth_stack'),
         'config',
         'f1tenth_online_async.yaml'
+    )
+
+    slam_config_loc = os.path.join(
+        get_package_share_directory('f1tenth_stack'),
+        'config',
+        'slam_loc.yaml'
     )
 
 
@@ -127,13 +133,19 @@ def generate_launch_description():
         description='Descriptions for robot localization configs'
     )
 
-    slam_la = DeclareLaunchArgument(
-        'slam_config',
-        default_value=slam_config,
+    slam_la_map = DeclareLaunchArgument(
+        'slam_config_map',
+        default_value=slam_config_map,
         description='Descriptions for slam configs'
     )
 
-    ld = LaunchDescription([joy_la, vesc_la, lidar_la, mux_la, zed_la, robot_localization_la, xsens_la, slam_la])
+    slam_la_loc = DeclareLaunchArgument(
+        'slam_config_loc',
+        default_value=slam_config_loc,
+        description='Descriptions for slam configs'
+    )
+
+    ld = LaunchDescription([joy_la, vesc_la, lidar_la, mux_la, zed_la, robot_localization_la, xsens_la, slam_la_map, slam_la_loc])
 
     joy_node = Node(
         package='joy',
@@ -242,11 +254,18 @@ def generate_launch_description():
         parameters=[LaunchConfiguration('xsens_config')]
     )
 
-    slam_node = Node(
+    slam_node_map = Node(
         package='slam_toolbox',
         executable='map_and_localization_slam_toolbox_node',
         name='slam_toolbox',
-        parameters=[LaunchConfiguration('slam_config')]
+        parameters=[LaunchConfiguration('slam_config_map')]
+    )
+
+    slam_node_loc = Node(
+        package='slam_toolbox',
+        executable='localization_slam_toolbox_node',
+        name='slam_toolbox',
+        parameters=[LaunchConfiguration('slam_config_loc')]
     )
 
     jetson_node = Node(
@@ -288,7 +307,8 @@ def generate_launch_description():
 
     ld.add_action(xsens_node)
     
-    ld.add_action(slam_node)
+    ld.add_action(slam_node_map)
+    #ld.add_action(slam_node_loc)
     #ld.add_action(save_map)
 
     ld.add_action(jetson_node)

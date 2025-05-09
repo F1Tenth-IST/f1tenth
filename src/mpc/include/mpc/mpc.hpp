@@ -20,6 +20,8 @@
 #include "acados_c/external_function_interface.h"
 #include "acados_solver_mpc_model.h"
 #include "blasfeo_d_aux_ext_dep.h"
+#include <tf2_ros/buffer.h>
+#include <tf2_ros/transform_listener.h>
 
 #define N MPC_MODEL_N // Prediction horizon
 
@@ -68,6 +70,9 @@ private:
     rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odomm_sub_;
     rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr pose_sub_;
     rclcpp::Subscription<std_msgs::msg::Float64>::SharedPtr vesc_servo_sub_;
+
+    std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
+    std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
 
     rclcpp::TimerBase::SharedPtr timer_;
 

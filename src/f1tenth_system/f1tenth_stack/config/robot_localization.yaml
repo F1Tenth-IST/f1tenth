@@ -32,6 +32,15 @@ ekf_filter_node:
     #               true, true, false,
     #               false, false, true,
     #               false, false, false]
+
+    #pose0: "pose"
+    #pose0_config: [true, true, false,   # X, Y, Z
+    #              false, false, true,  # Roll, Pitch, Yaw
+    #              false, false, false,   # dX, dY, dZ
+    #              false, false, false,  # dRoll, dPitch, dYaw
+    #              false, false, false] # Acceleration (X, Y, Z)
+
+
 #
     imu0: "imu/data"
    

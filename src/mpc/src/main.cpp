@@ -7,7 +7,9 @@ MPCNode::MPCNode() : Node("mpc_node"),
                      steering_angle_to_servo_gain(-0.840),
                      steering_angle_to_servo_offset(0.475),
                      frequency(10.0),
-                     reference_trajectory_vector_({reference_trajectory_.x, reference_trajectory_.y, reference_trajectory_.yaw, reference_trajectory_.v})
+                     reference_trajectory_vector_({reference_trajectory_.x, reference_trajectory_.y, reference_trajectory_.yaw, reference_trajectory_.v}),
+                     tf_buffer_(std::make_shared<tf2_ros::Buffer>(this->get_clock())),
+                     tf_listener_(std::make_shared<tf2_ros::TransformListener>(*tf_buffer_))
 {
 
     // Declare parameters
@@ -359,16 +361,43 @@ void MPCNode::OdomCallback(const nav_msgs::msg::Odometry::SharedPtr msg)
     
     current_state_.v = msg->twist.twist.linear.x;
 
-    if (!use_pose_topic_)
+    /* if (!use_pose_topic_)
     {
         ProcessPose(msg->pose.pose);
+    }  */
+
+    geometry_msgs::msg::PoseStamped odom_pose;
+    odom_pose.header = msg->header;
+    odom_pose.pose = msg->pose.pose;
+    
+    geometry_msgs::msg::TransformStamped map_to_odom;
+    try
+    {
+        map_to_odom = tf_buffer_->lookupTransform("map", "odom", tf2::TimePointZero);
     }
+    catch (const tf2::TransformException &ex)
+    {
+        RCLCPP_WARN(this->get_logger(), "Could not transform 'map' to 'odom': %s", ex.what());
+        return;
+    }
+
+    geometry_msgs::msg::PoseStamped map_pose;
+    tf2::doTransform(odom_pose, map_pose, map_to_odom);
+
+    current_state_.x = map_pose.pose.position.x;
+    current_state_.y = map_pose.pose.position.y;
+    tf2::Quaternion q(
+        map_pose.pose.orientation.x,
+        map_pose.pose.orientation.y,
+        map_pose.pose.orientation.z,
+        map_pose.pose.orientation.w);
+    current_state_.yaw = tf2::getYaw(q); 
        
 }
 
 void MPCNode::PoseCallback(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg)
 {
-    ProcessPose(msg->pose.pose);
+    //ProcessPose(msg->pose.pose);
 }
 
 void MPCNode::ProcessPose(const geometry_msgs::msg::Pose& msg)
