@@ -253,6 +253,18 @@ def generate_launch_description():
         name='mpc',
         parameters=[LaunchConfiguration('mpc_config')]
     )
+
+    jetson_node = Node(
+        package='ros2_jetson_stats',
+        executable='ros2_jtop',
+        name='ros2_jetson_stats'
+    )
+
+    zed_camera_node = Node(
+        package='zed_rgb_node',
+        executable='zed_rgb_node',
+        name='zed_rgb_node'
+    )
  
     
 
@@ -274,6 +286,7 @@ def generate_launch_description():
    
 
     #ld.add_action(zed_node)
+    ld.add_action(zed_camera_node)
 
     ld.add_action(robot_localization_node)
     ld.add_action(path_robot_localization_node)
@@ -284,5 +297,8 @@ def generate_launch_description():
     ld.add_action(slam_node)
 
     ld.add_action(mpc_node)
+
+    ld.add_action(jetson_node)
+
 
     return ld

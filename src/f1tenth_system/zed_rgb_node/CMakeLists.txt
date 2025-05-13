@@ -28,7 +28,10 @@ add_executable(zed_rgb_node
 )
 
 # Linkar com OpenCV e zed-open-capture
-target_link_libraries(zed_rgb_node zed_open_capture ${OpenCV_LIBS})
+target_link_libraries(
+  zed_rgb_node 
+  zed_open_capture
+  ${OpenCV_LIBS})
 
 ament_target_dependencies(zed_rgb_node rclcpp sensor_msgs cv_bridge)
 
