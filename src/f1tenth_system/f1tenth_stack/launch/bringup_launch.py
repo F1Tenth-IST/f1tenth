@@ -286,7 +286,7 @@ def generate_launch_description():
    
 
     #ld.add_action(zed_node)
-    ld.add_action(zed_camera_node)
+    #ld.add_action(zed_camera_node)
 
     ld.add_action(robot_localization_node)
     ld.add_action(path_robot_localization_node)

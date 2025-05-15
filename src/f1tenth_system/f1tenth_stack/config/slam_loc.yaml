@@ -15,7 +15,7 @@ slam_toolbox:
     mode: localization
 
     # if you'd like to start localizing on bringup in a map and pose
-    map_file_name: /home/jetson/f1tenth/maps/map_2025_05_09-17_49
+    map_file_name: /home/jetson/f1tenth/maps/map_2025_05_15-16_48
     map_start_pose: [0.0, 0.0, 0.0]
 
     debug_logging: false

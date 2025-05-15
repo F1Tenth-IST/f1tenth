@@ -273,7 +273,6 @@ def generate_launch_description():
         executable='ros2_jtop',
         name='ros2_jetson_stats'
     )
-
     zed_camera_node = Node(
         package='zed_rgb_node',
         executable='zed_rgb_node',

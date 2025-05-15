@@ -94,6 +94,13 @@ private:
         cv::Mat frameBGR_cpu;
         cv::cvtColor(frameYUV_cpu, frameBGR_cpu, cv::COLOR_YUV2BGR_YUYV);
 
+        // ----> Conversion from BGR to ROS Image message
+        auto msg = cv_bridge::CvImage(std_msgs::msg::Header(), "bgr8", frameBGR_cpu).toImageMsg();
+        msg->header.stamp = this->now();
+        publisher_->publish(*msg); 
+
+        return;
+
         cv::cuda::GpuMat frameBGR_gpu;
         frameBGR_gpu.upload(frameBGR_cpu); // Upload frame to GPU
 
@@ -108,11 +115,6 @@ private:
         cv::Mat left, right;
         left_gpu.download(left);
         right_gpu.download(right);
-        
-        // ----> Conversion from BGR to ROS Image message
-        auto msg = cv_bridge::CvImage(std_msgs::msg::Header(), "bgr8", frameBGR_cpu).toImageMsg();
-        msg->header.stamp = this->now();
-        publisher_->publish(*msg); 
 
         auto msg_left = cv_bridge::CvImage(std_msgs::msg::Header(), "bgr8", left).toImageMsg();
         msg_left->header.stamp = this->now();
