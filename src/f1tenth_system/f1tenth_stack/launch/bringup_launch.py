@@ -265,6 +265,12 @@ def generate_launch_description():
         executable='zed_rgb_node',
         name='zed_rgb_node'
     )
+
+    zed_sdk_node = Node(
+        package='zed_sdk_cpp',
+        executable='zed_sdk_cpp',
+        name='zed_sdk_cpp'
+    )
  
     
 
@@ -280,17 +286,18 @@ def generate_launch_description():
     ld.add_action(ackermann_to_vesc_node)
     ld.add_action(vesc_to_odom_node)
     ld.add_action(vesc_driver_node)
+
     #ld.add_action(throttle_interpolator_node)
+
     ld.add_action(urg_node)
     ld.add_action(ackermann_mux_node)
-   
 
     #ld.add_action(zed_node)
     #ld.add_action(zed_camera_node)
+    ld.add_action(zed_sdk_node)
 
     ld.add_action(robot_localization_node)
     ld.add_action(path_robot_localization_node)
-
 
     ld.add_action(xsens_node)
     

@@ -211,14 +211,22 @@ def generate_launch_description():
         package='tf2_ros',
         executable='static_transform_publisher',
         name='static_baselink_to_vesc',
-        arguments=['0.0', '0.0','0.05','-1.5708','0.0', '0.0', 'base_link', 'vesc']
+        arguments=['0.0', '0.0','0.05','-1.5601498','0.01884956', '0.0', 'base_link', 'vesc']
     )
 
     static_tf_node_xsens = Node(
         package='tf2_ros',
         executable='static_transform_publisher',
         name='static_baselink_to_vesc',
-        arguments=['0.0', '-0.01','0.0','-1.5708','0.0', '3.141', 'base_link', 'xsens']
+        arguments=['0.0', '-0.01','0.0','-1.5640','-0.02', '3.141', 'base_link', 'xsens']
+    )
+
+    static_tf_node_zed2i = Node(
+        package='tf2_ros',
+        executable='static_transform_publisher',
+        name='static_baselink_to_zed2i',
+        #arguments=['0.2', '0.0','0.1','0.5','-0.5', '0.5', '-0.5', 'base_link', 'zed2i']
+        arguments=['0.2', '0.0','0.1','0.46706241', '-0.46706241',  '0.53089801', '-0.53089801', 'base_link', 'zed2i']
     )
 
     """ zed_node = Node(
@@ -279,6 +287,12 @@ def generate_launch_description():
         name='zed_rgb_node'
     )
 
+    zed_sdk_node = Node(
+        package='zed_sdk_cpp',
+        executable='zed_sdk_cpp',
+        name='zed_sdk_cpp'
+    )
+
     """ save_map = RegisterEventHandler(
         OnShutdown(
             on_shutdown=[
@@ -292,6 +306,7 @@ def generate_launch_description():
     ld.add_action(static_tf_node_laser)
     ld.add_action(static_tf_node_vesc)
     ld.add_action(static_tf_node_xsens)
+    ld.add_action(static_tf_node_zed2i)
 
     ld.add_action(joy_node)
     ld.add_action(joy_teleop_node)
@@ -305,7 +320,8 @@ def generate_launch_description():
     ld.add_action(ackermann_mux_node)
    
     #ld.add_action(zed_node)
-    ld.add_action(zed_camera_node)
+    #ld.add_action(zed_camera_node)
+    ld.add_action(zed_sdk_node)
 
     ld.add_action(robot_localization_node)
     ld.add_action(path_robot_localization_node)
