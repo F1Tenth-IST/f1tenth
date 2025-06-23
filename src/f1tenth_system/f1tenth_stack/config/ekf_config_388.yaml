@@ -1,0 +1,49 @@
+ekf_filter_node:
+  ros__parameters:
+    base_link_frame: base_link
+    dynamic_process_noise_covariance: true
+    frequency: 50.0
+    imu0: imu/data
+    imu0_config:
+    - false
+    - false
+    - false
+    - true
+    - true
+    - true
+    - false
+    - false
+    - false
+    - true
+    - true
+    - true
+    - true
+    - true
+    - true
+    imu0_relative: false
+    imu0_remove_gravitational_acceleration: true
+    odom0: vesc/odom
+    odom0_config:
+    - false
+    - false
+    - true
+    - false
+    - false
+    - false
+    - true
+    - true
+    - false
+    - false
+    - false
+    - true
+    - false
+    - false
+    - false
+    odom_frame: odom
+    print_diagnostics: true
+    publish_acceleration: true
+    publish_tf: true
+    sensor_timeout: 5.0
+    two_d_mode: false
+    use_sim_time: true
+    world_frame: odom
