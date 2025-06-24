@@ -22,20 +22,26 @@ from launch.substitutions import EnvironmentVariable
 import pathlib
 import launch.actions
 from launch.actions import DeclareLaunchArgument
+from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 
 def generate_launch_description():
+    
+    declare_params_file_cmd = DeclareLaunchArgument(
+        'params_file',
+        # Usa aqui o default absoluto ou relativo que quiseres!
+        default_value='/absolute/path/para/robot_localization.yaml',
+        description='Path to the parameter file to use for EKF'
+    )
 
     robot_localization_node = Node(
         package='robot_localization',
         executable='ekf_node',
         name='ekf_filter_node',
         output='screen',
-        parameters=[os.path.join(get_package_share_directory("f1tenth_stack"), 'config', 'robot_localization.yaml')],
+        parameters=[LaunchConfiguration('params_file')],
     )
 
-  
-   
 
     path_robot_localization_node = Node(
             package='odom_to_path',

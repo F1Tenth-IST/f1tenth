@@ -46,7 +46,13 @@ private:
 
 int main(int argc, char **argv) {
     rclcpp::init(argc, argv);
-    rclcpp::spin(std::make_shared<OdomToPath>());
+
+    auto node = std::make_shared<OdomToPath>();
+    rclcpp::executors::SingleThreadedExecutor executor;
+
+    executor.add_node(node);
+    executor.spin();  // responde melhor ao Ctrl+C
+
     rclcpp::shutdown();
     return 0;
 }
