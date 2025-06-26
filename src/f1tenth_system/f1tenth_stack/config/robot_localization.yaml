@@ -6,11 +6,14 @@ ekf_filter_node: #Config 388
     odom_frame: "odom"
     base_link_frame: "base_link"
     world_frame: "odom"
-    sensor_timeout: 2.0 # segundo de espera antes de declarar timeout
+    sensor_timeout: 5.0 # segundo de espera antes de declarar timeout
     publish_acceleration: True
     print_diagnostics: True
     #use_sim_time: True
+    #use_sim_time: True
     #transform_timeout: 0.1
+    dynamic_process_noise_covariance: true
+
     
     odom0: "vesc/odom"
     odom0_config: [false, false, true,   # X, Y, Z
