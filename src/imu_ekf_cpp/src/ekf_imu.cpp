@@ -48,6 +48,9 @@ private:
         rcv_odom_count_++;
 
         imu_msg_->orientation = msg->pose.pose.orientation;
+        
+        //invert yaw
+        //imu_msg_->orientation.z = -imu_msg_->orientation.z;
 
         imu_msg_->angular_velocity = msg->twist.twist.angular;
 
@@ -77,10 +80,14 @@ private:
 
         
         
-        for (int i = 0; i < 9; ++i)
-        {
-            imu_msg_->linear_acceleration_covariance[i] = msg->accel.covariance[i];
-        }
+   
+        
+            for (int i = 0; i < 3; ++i) {
+                for (int j = 0; j < 3; ++j) {
+                    imu_msg_->linear_acceleration_covariance[i * 3 + j] = msg->accel.covariance[i * 6 + j];
+                }
+            }
+       
     }
 
     rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
