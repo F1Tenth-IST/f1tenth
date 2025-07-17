@@ -1,6 +1,6 @@
 {
-	"acados_include_path":"/home/duarte/acados/include",
-	"acados_lib_path":"/home/duarte/acados/lib",
+	"acados_include_path":"/home/desktop/acados/include",
+	"acados_lib_path":"/home/desktop/acados/lib",
 	"code_export_directory":"c_generated_code",
 	"constraints":{
 		"C":[],
@@ -206,7 +206,7 @@
 				[
 					0,
 					0,
-					1,
+					10,
 					0,
 					0,
 					0
@@ -215,7 +215,7 @@
 					0,
 					0,
 					0,
-					1,
+					10,
 					0,
 					0
 				],
@@ -256,7 +256,7 @@
 				[
 					0,
 					0,
-					1,
+					10,
 					0,
 					0,
 					0
@@ -265,7 +265,7 @@
 					0,
 					0,
 					0,
-					1,
+					10,
 					0,
 					0
 				],
@@ -302,14 +302,14 @@
 				[
 					0,
 					0,
-					1,
+					10,
 					0
 				],
 				[
 					0,
 					0,
 					0,
-					1
+					10
 				]
 		],
 		"Zl":[],
@@ -380,7 +380,7 @@
 		"nh":0,
 		"nh_0":0,
 		"nh_e":0,
-		"np":0,
+		"np":1,
 		"np_global":0,
 		"nphi":0,
 		"nphi_0":0,
@@ -439,7 +439,9 @@
 	},
 	"name":"mpc_model",
 	"p_global_values":[],
-	"parameter_values":[],
+	"parameter_values":[
+		0
+	],
 	"problem_class":"OCP",
 	"shared_lib_ext":".so",
 	"simulink_opts":[],

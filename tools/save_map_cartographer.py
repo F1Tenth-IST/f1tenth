@@ -17,7 +17,7 @@ class CartographerMetricsLogger(Node):
         self.req = ReadMetrics.Request()
         
         timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        self.out_dir = f"map_{timestamp}"
+        self.out_dir = f"maps/map_{timestamp}"
         
         self.call_service()
         self.save_map()

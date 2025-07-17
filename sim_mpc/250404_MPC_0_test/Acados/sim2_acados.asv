@@ -1,13 +1,13 @@
 
 %speed_to_erpm_gain  = 4277.5
 %speed_to_duty (m/s) = 0.0602
-%close all
+close all
 %
 
 
 compile_solver=true;
 
-Ts = 1/20;      % Tempo de amostragem (20 Hz)
+Ts = 1/10;      % Tempo de amostragem (20 Hz)
 T_total = 20; % Tempo de sim
 % Definir o horizonte de predição
 N = 10; % Horizonte do MPC
@@ -23,18 +23,19 @@ delta_max = abs(servo_max/servo_gain); % Ângulo máximo de direção (radianos)
 
 v_ref = 1.0;  % m/s
 
-N_total = 10000;  % Numeros de pontos traj
-n = (2*pi)/N_total;
+n_total = 10000;  % numeros de pontos traj
+n = (2*pi)/n_total;
 x_traj = 2.5 * cos(0:n:2*pi);
 y_traj = -1.75 - 1.75 * sin(0:n:2*pi);
-dx = diff(x_traj);              % tamanho N-1
-dy = diff(y_traj);              % tamanho N-1
+dx = diff(x_traj);              % tamanho n-1
+dy = diff(y_traj);              % tamanho n-1
 psi_traj =atan2(dy, dx);           % heading entre pontos consecutivos
-psi_traj(end+1) = psi_traj(end);     % repetir o último valor → agora tamanho N
+psi_traj(end+1) = psi_traj(end);     % repetir o último valor → agora tamanho n
 
 figure
-plot(x_traj, y_traj, 'r.', 'MarkerSize', 10);
+plot(x_traj, y_traj, 'r.', 'markersize', 10);
 axis equal
+
 
 
 
@@ -131,27 +132,27 @@ for t_idx = 1:T_total/Ts-1
     distances = sqrt((x_traj - x(1)).^2 + (y_traj - x(2)).^2);
     [~, idx_ref_start] = min(distances);
     % 2. Compute reference points by walking along the trajectory
-x_ref_step = zeros(1, N);
-y_ref_step = zeros(1, N);
-psi_ref = zeros(1, N);
-idx = idx_ref_start;
-dist_accum = 0;
+    x_ref_step = zeros(1, N);
+    y_ref_step = zeros(1, N);
+    psi_ref = zeros(1, N);
+    idx = idx_ref_start;
+    dist_accum = 0;
 
-for i = 1:N
-    target_dist = (i - 1) * 1.0 / frequency * v_ref;
-
-    while dist_accum < target_dist
-        next_idx = mod(idx, length(reference_trajectory_.x)) + 1;
-        dx = reference_trajectory_.x(next_idx) - reference_trajectory_.x(idx);
-        dy = reference_trajectory_.y(next_idx) - reference_trajectory_.y(idx);
-        dist_accum = dist_accum + sqrt(dx^2 + dy^2);
-        idx = next_idx;
+    for i = 1:N
+        target_dist = (i - 1) * Ts * v_ref;
+    
+        while dist_accum < target_dist
+            next_idx = mod(idx, length(x_traj)) + 1;
+            dx = x_traj(next_idx) - x_traj(idx);
+            dy = y_traj(next_idx) - y_traj(idx);
+            dist_accum = dist_accum + sqrt(dx^2 + dy^2);
+            idx = next_idx;
+        end
+    
+        x_ref_step(i) = x_traj(idx);
+        y_ref_step(i) = y_traj(idx);
+        psi_ref(i) = psi_traj(idx);
     end
-
-    x_ref_step(i) = reference_trajectory_.x(idx);
-    y_ref_step(i) = reference_trajectory_.y(idx);
-    psi_ref(i) = reference_trajectory_.yaw(idx);
-end
 
     
 
@@ -170,6 +171,8 @@ end
 
     %solver.set('yref_e', [x_ref_step(end); y_ref_step(end); 0; 0; v_ref]);
     %solver.set(N, 'p', [x_ref_step(end); y_ref_step(end); v_ref]);
+    
+    
     solver.set('cost_y_ref_e', [x_ref_step(end); y_ref_step(end);sin(psi_ref(k+1));cos(psi_ref(k+1))]);
 
 
@@ -241,9 +244,13 @@ ylabel("Tempo[ms]")
 % ---- Simulação da Dinâmica ----
 function x_sim = simulate_dynamics(x, u, Ts, L)
 
+servo_max_rate = 60*(3.14/360)/0.20 ;           % 0.20s/60º
+
 delta = u(1);
 v = u(2);
+
 psi = x(3); % Orientação atual
+
 
 x(4)=delta;
 x(5)=v;
@@ -251,7 +258,7 @@ x(5)=v;
 x_sim = x + Ts * [
     v * cos(psi);        % dx/dt
     v * sin(psi);        % dy/dt
-    (v / L) * tan(-delta); % dyaw/dt
+    (v / L) * tan(delta); % dyaw/dt
     0                     % dtheta/dt
     0                     % dv/dt = 0 (v é entrada direta)
     ];

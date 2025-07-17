@@ -1,4 +1,4 @@
-function ocp = setup_ocp(N, Ts, Q, R, delta_max, v_max)
+function ocp = setup_ocp_v1(N, Ts, Q, R, delta_max, v_max)
 
     import casadi.*
     model = ocp_model_acados(); % <- Verifica se tens este ficheiro

@@ -588,6 +588,25 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     {
 
 
+        MEX_DIM_CHECK_MAT(fun_name, field, nrow, ncol, nrow, 2);
+        // create int index vector
+        int idx_tmp[1];
+        for (int ip = 0; ip<nrow; ip++)
+            idx_tmp[ip] = (int) value[ip];
+
+        if (nrhs == min_nrhs) // all stages
+        {
+            for (ii=0; ii<=N; ii++)
+            {
+                mpc_model_acados_update_params_sparse(capsule, ii, idx_tmp, value+nrow, nrow);
+            }
+        }
+        else if (nrhs == min_nrhs+1) // one stage
+        {
+            int stage = mxGetScalar( prhs[3] );
+                mpc_model_acados_update_params_sparse(capsule, stage, idx_tmp, value+nrow, nrow);
+        }
+
     }
 /* OPTIONS */
     else if (!strcmp(field, "nlp_solver_max_iter"))

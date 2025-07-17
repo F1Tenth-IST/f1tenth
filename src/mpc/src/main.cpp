@@ -12,6 +12,7 @@ MPCNode::MPCNode() : Node("mpc_node"),
                      tf_listener_(std::make_shared<tf2_ros::TransformListener>(*tf_buffer_))
 {
 
+    RCLCPP_INFO(this->get_logger(), "MPC Node initialized.");
     // Declare parameters
     this->declare_parameter<std::string>("odom_topic", "/odometry/filtered");
     this->declare_parameter<std::string>("traj_file", "traj/pts/centerline_map_2025-07-16_15-28-18.csv");
@@ -73,8 +74,10 @@ MPCNode::MPCNode() : Node("mpc_node"),
         rclcpp::shutdown();
     }
 
+    
+
     // Initialize ACADOS solver
-      nlp_config_ = mpc_model_acados_get_nlp_config(capsule);
+    nlp_config_ = mpc_model_acados_get_nlp_config(capsule);
     nlp_dims_ = mpc_model_acados_get_nlp_dims(capsule);
     nlp_in_ = mpc_model_acados_get_nlp_in(capsule);
     nlp_out_ = mpc_model_acados_get_nlp_out(capsule);
@@ -107,6 +110,16 @@ MPCNode::MPCNode() : Node("mpc_node"),
     // precompute
     // ocp_nlp_precompute(nlp_solver_, nlp_in_, nlp_out_);
 
+    double p = (1.0 / frequency);  // Ts é o teu tempo de amostragem
+
+    //ocp_nlp_set_all(nlp_solver_, nlp_in_, nlp_out_, "p", &p); // Set the parameter p
+
+    int idx = 0; // Index for the parameter
+    for (int i = 0; i < N; i++) {
+        ocp_nlp_in_set_params_sparse(nlp_config_, nlp_dims_, nlp_in_, i, &idx, &p, 1);
+    }
+
+   
     // Set up a timer to solve MPC at a fixed frequency
     timer_ = this->create_wall_timer(
         std::chrono::milliseconds(static_cast<int>(1000 / frequency)),
@@ -175,6 +188,11 @@ void MPCNode::solveMPC()
         RCLCPP_ERROR(this->get_logger(), "ACADOS solver failed with status %d", status);
         return;
     }
+    else 
+    {
+        RCLCPP_INFO(this->get_logger(), "ACADOS solver succeeded with status %d", status);
+    }
+    
 
     // Get control output
     std::array<double, 2> control_output;

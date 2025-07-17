@@ -39,7 +39,7 @@
 #define MPC_MODEL_NX     5
 #define MPC_MODEL_NZ     0
 #define MPC_MODEL_NU     2
-#define MPC_MODEL_NP     0
+#define MPC_MODEL_NP     1
 #define MPC_MODEL_NP_GLOBAL     0
 #define MPC_MODEL_NBX    0
 #define MPC_MODEL_NBX0   5
