@@ -7,14 +7,14 @@ function solver = setup_ocp_v2(N, Ts, Q, R, delta_max, v_max)
     nx = 5;  % Estados: [x, y, psi, theta, v]
     nu = 2;  % Controlo: [delta, v]
     np = 1;  % Parâmetros: [Ts]
-
-
+    
+    
     x = SX.sym('x', nx);
     u = SX.sym('u', nu);
     p = SX.sym('p', np);
 
-    
-    model= car_model_servo(x,u,p);
+
+    model = car_model_servo_disc(x,u,p);
 
     %% === OCP setup ===
     ocp = AcadosOcp();
@@ -76,10 +76,21 @@ function solver = setup_ocp_v2(N, Ts, Q, R, delta_max, v_max)
     %ocp.cost.W_e = 1;    % terminal
     %ocp.cost.W_0 = 1;    % inicial
 
+    % ocp.constraints.constr_type = 'BGH';  % <- OBRIGATÓRIO
+
+
     % Constraints (caixas nas entradas)
-    ocp.constraints.lbu = [-delta_max; 0];
-    ocp.constraints.ubu = [ delta_max;  v_max];
-    ocp.constraints.idxbu = 0:nu-1;
+    % ocp.constraints.lbu = [-delta_max; 0];
+    % ocp.constraints.ubu = [ delta_max;  v_max];
+    % ocp.constraints.idxbu = 0:nu-1;
+
+
+    % servo_max_rate = 0.1;       % velocidade angular máxima (rad/s)
+    % 
+    % ocp.constraints.lh = -servo_max_rate;
+    % ocp.constraints.uh =  servo_max_rate;
+    % ocp.constraints.lh_0 = -servo_max_rate;
+    % ocp.constraints.uh_0 =  servo_max_rate;
 
     % Estado inicial (a definir no runtime)
     ocp.constraints.x0 = zeros(nx,1);
@@ -87,9 +98,9 @@ function solver = setup_ocp_v2(N, Ts, Q, R, delta_max, v_max)
     %% === Opções do solver ===
     ocp.solver_options.qp_solver = 'FULL_CONDENSING_HPIPM';
     ocp.solver_options.hessian_approx = 'GAUSS_NEWTON';
-    ocp.solver_options.integrator_type = 'ERK';
+    ocp.solver_options.integrator_type = 'DISCRETE';
     ocp.solver_options.nlp_solver_type = 'SQP'; % ou 'SQP_RTI' para mais rápido
-    ocp.solver_options.print_level = 0;
+    ocp.solver_options.print_level = 1;
 
     ocp.solver_options.sim_method_num_stages = 4;
     ocp.solver_options.sim_method_num_steps = 3;

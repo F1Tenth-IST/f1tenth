@@ -45,15 +45,15 @@ v_ref=data(:,4);
 
 
 
- figure
- plot(x_traj, y_traj, 'r.', 'markersize', 10);
- axis equal
+ % figure
+ % plot(x_traj, y_traj, 'r.', 'markersize', 10);
+ % axis equal
 
 
 
 
 % Parâmetros do MPC
-Q = diag([10, 10, 10, 1, 1]);  % [x, y, psi, theta, v]
+Q = diag([10, 10, 0, 1, 1]);  % [x, y, psi, theta, v]
 R = diag([0.1, 0.1]);       % Ponderação dos controles
 
 check_acados_requirements()
@@ -138,6 +138,9 @@ t_exec=0;
 
 solver.set('p', Ts)
 
+mpc_sim_u=[];
+mpc_sim_x=[];
+
 % Loop principal do MPC
 for t_idx = 1:T_total/Ts-1
     % Trajetória de referência para o horizonte atual
@@ -201,6 +204,14 @@ for t_idx = 1:T_total/Ts-1
 
     u = solver.get('u', 0);
 
+    mpc_sim_u{t_idx}= solver.get('u');
+    mpc_sim_x{t_idx}= solver.get('x');
+
+    ddelta_real = (u(1) - x(4)) / Ts;
+    if abs(ddelta_real) > (5.2360/5)
+        fprintf("ddelta: %.4f\n", ddelta_real);
+    end
+
     % U_opt = zeros(2, N);  % 2 inputs por etapa: delta e v
     % X_opt = zeros(5, N);  % 2 inputs por etapa: delta e v
     % for k = 0:N-1
@@ -243,23 +254,52 @@ ylabel("Tempo[ms]")
 %fprintf("distancia percorrida",int(history(:,5),Ts))
 
 %Plotar angulo de direção
-% figure;
-% subplot(2,1,1);
-% plot(1:T_total, history(:,3), 'b-', 'LineWidth', 2);
-% xlabel('Step');
-% ylabel('Ângulo de direção [rad]');
-% title('Ângulo de direção do veículo');
-% subplot(2,1,2);
-% plot(1:T_total, history(:,4), 'b-', 'LineWidth', 2);
-% xlabel('Step');
-% ylabel('Velocidade [m/s]');
-% title('Velocidade do veículo');
+figure;
+subplot(2,1,1);
+plot(history(:,4), 'b-', 'LineWidth', 2);
+xlabel('Step');
+ylabel('Ângulo de direção [rad]');
+title('Ângulo de direção do veículo');
+subplot(2,1,2);
+plot(diff(history(:,4))/Ts, 'b-', 'LineWidth', 2);
+xlabel('Step');
+ylabel('Ângulo de direção derivado [rad]');
+title('Derivada do Ângulo de direção do veículo');
+
+
+x_delta = mpc_sim_x{1}(4,2:end);
+u_delta = mpc_sim_u{1}(1,:);
+error = x_delta - u_delta;
+disp('Error u1 vs x4:')
+disp(error)
+
+
+max_diff_u=0;
+for i =1:length(mpc_sim_u)
+    diff_u = abs(mpc_sim_u{i}(1,:)-mpc_sim_x{i}(4,1:end-1))/Ts;
+    if max_diff_u<max(diff_u)
+        max_diff_u=max(diff_u);
+    end
+end
+
+disp(max_diff_u)
+
+
+
+
+
+
+
+
+
+
+
 
 
 % ---- Simulação da Dinâmica ----
 function x_sim = simulate_dynamics(x, u, Ts, L)
 
-servo_max_rate = 5.2360 ; % rad/s (60° em 0.20s)
+servo_max_rate = 5.2360; % rad/s (60° em 0.20s)
 
 delta_cmd = u(1);
 v = u(2);
@@ -274,6 +314,7 @@ max_delta_change = servo_max_rate * Ts;
 % Atualizar delta com limitação de velocidade
 if abs(delta_error) > max_delta_change
     delta_new = delta + sign(delta_error) * max_delta_change;
+    disp("Limit ddelta")
 else
     delta_new = delta_cmd;
 end
@@ -297,19 +338,3 @@ x_sim(5) = v;
 end
 
 
-% ---- Função de Custo ----
-function J = mpc_cost(U, x0, x_ref, y_ref, v_ref, Ts, L, N, Q, R)
-x = x0;
-J = 0;
-
-for k = 1:N
-    u = U(k, :)'; % Controle atual
-
-    x = simulate_dynamics(x, u, Ts, L);
-    
-
-    % Erro em relação à referência
-    e = [x(1)-x_ref(k); x(2)-y_ref(k); 0; 0 ;x(5)-v_ref];
-    J = J + e' * Q * e + u' * R * u;
-end
-end
