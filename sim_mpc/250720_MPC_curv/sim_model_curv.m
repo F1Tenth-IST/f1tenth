@@ -7,7 +7,7 @@ close all
 
 compile_solver=true;
 
-Ds = 1/10;      % Tempo de amostragem (20 Hz)
+Ts = 1/10;      % Tempo de amostragem (20 Hz)
 % Definir o horizonte de predição
 N = 10; % Horizonte do MPC
 
@@ -79,13 +79,13 @@ import casadi.*
 % ------------------------------
 
 % Estado inicial
-x = ones(8,1)*0.001; % [s; n; µ; vx; vy; r; δ; T]
+x = [0;0;0;0;0;0;0;0]; % [s; n; µ; vx; vy; r; δ; T]
 history = x';
 history_xy=[0,0];
-u0=[0.001;1]*0.2;
+u0=[0;1]*0.1;
 u_history=u0';
 
-D_s_total = 5; % Tempo de sim
+T_s_total = 5; % Tempo de sim
 
 % Gráfico Trajetoria
 figure; hold on; grid on;
@@ -96,6 +96,8 @@ heading_arrow = quiver(0,0, cos(0), sin(0), 0.5, 'b', 'LineWidth', 2, 'MaxHeadSi
 traj_xy = plot(history_xy(:,1),history_xy(:,2), 'r.', 'markersize', 10);
 horizon_line = plot(nan, nan, 'g.-', 'LineWidth', 1.5); % linha do horizonte    
 traj_ref = plot(track.x_traj, track.y_traj, 'y--', 'LineWidth', 1.5);
+ref_point = quiver(0,0, cos(0), sin(0), 0.5, 'o', 'LineWidth', 2, 'MaxHeadSize', 2);
+
 xlabel('x [m]'); ylabel('y [m]');
 title('Sim MPC');
 legend('Trajetória de referência', 'Trajetória do veículo');
@@ -182,11 +184,15 @@ p_global=[true,Bf,Br,Cf,Cr,Df,Dr]';
 mpc_sim_u=[];
 mpc_sim_x=[];
 
+
 history_pred={};
 
+logs = struct('Fy_f',[],'Fy_r',[],'alfa_f',[],'alfa_r',[]); 
+
+last_s=0;
 
 % Loop principal do MPC
-for t_idx = 1:D_s_total/Ds-1
+for t_idx = 1:T_s_total/Ts-1
     % Trajetória de referência para o horizonte atual
     
 
@@ -220,12 +226,23 @@ for t_idx = 1:D_s_total/Ds-1
     u_history=[u_history; u'];
 
     % Atualiza estado com o modelo da bicicleta
-    x = full(car_model_curv(Ds, track,x,u));
+    [x, log_step] = car_model_curv(Ts, track,x,u);
+
+    logs.Fy_f=[logs.Fy_f,log_step.Fy_f];
+    logs.Fy_r=[logs.Fy_r,log_step.Fy_r];
+    logs.alfa_f=[logs.alfa_f,log_step.alfa_f];
+    logs.alfa_r=[logs.alfa_r,log_step.alfa_r];
+
+    x=full(x);
+
+    last_s = history(end,1);
 
     history = [history; x'];
 
+    %x(1)=last_s;
+
     % Pose
-    [X,Y,psi] = local_to_global_pose(track,x);
+    [X,Y,psi, X_s, Y_s, psi_s] = local_to_global_pose(track,x, last_s);
     history_xy = [history_xy;X,Y];
 
     % Update Horizonte
@@ -245,6 +262,8 @@ for t_idx = 1:D_s_total/Ds-1
 
     %set(traj, 'XData', history(:,1), 'YData', history(:,2));
     set(heading_arrow,'XData', X, 'YData', Y ,'UData', cos(psi), 'VData', sin(psi));
+    set(ref_point,'XData', X_s, 'YData', Y_s , 'UData', cos(psi_s), 'VData', sin(psi_s));
+
 
     set(traj_xy,'XData', history_xy(:,1),'YData', history_xy(:,2));
     % set(horizon_line, 'XData', X_h, 'YData', Y_h);
@@ -263,6 +282,11 @@ for t_idx = 1:D_s_total/Ds-1
     set(p_u1, 'XData', 0:t_idx, 'YData',u_history(:,1));
     set(p_u2, 'XData', 0:t_idx, 'YData',u_history(:,2));
     drawnow;
+
+
+    if t_idx==32
+        disp("stop")
+    end
 
 
 
@@ -314,25 +338,33 @@ plot(history(:,2))
 % 
 % disp(max_diff_u)
 
-function [x,y,psi]=local_to_global_pose (track,x)
+function [x,y,psi, X_s, Y_s,theta_s]=local_to_global_pose (track,x,s)
 
-    s_val=x(1);
+    s_val = s;
     n_val = x(2);
-    mu_val= x(3);
+    mu_val = x(3);
     
     import casadi.*
 
     x_lut =interpolant('kappa_lut','linear',{track.s_traj},track.x_traj);
     y_lut =interpolant('n_l_lut','linear',{track.s_traj},track.y_traj);
-    theta_traj = cumtrapz(track.s_traj, track.kappa_traj);  % integração de kappa para obter theta
+    theta_traj = cumsum(track.kappa_traj * 0.01);
+    theta_0 = atan2(track.y_traj(2)-track.y_traj(1),track.x_traj(2)-track.x_traj(1));
+    %theta_traj= theta_traj+theta_0;
+    % dx = cos(theta_traj);  % Derivada de x em relação a theta
+    % dy = sin(theta_traj); 
+    
     theta_lut =interpolant('n_r_lut','linear',{track.s_traj},theta_traj);
 
-    X_s = x_lut(s_val);
-    Y_s = y_lut(s_val);
-    theta_s = theta_lut(s_val);
+   
+
+
+    X_s = full(x_lut(s_val));
+    Y_s = full(y_lut(s_val));
+    theta_s = full(theta_lut(s_val));
     
-    x = full(X_s - n_val * sin(theta_s));
-    y = full(Y_s + n_val * cos(theta_s));
+    x = full(X_s + n_val * cos(theta_s+3.1416/2));
+    y = full(Y_s + n_val * sin(theta_s+3.1416/2));
     psi = full(theta_s + mu_val);
 end
 

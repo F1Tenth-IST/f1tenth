@@ -1,4 +1,4 @@
-function [x_next] = car_model_curv(Ds, track,x,u)
+function [x_next,log] = car_model_curv(Ts, track,x,u)
 
 import casadi.*
 
@@ -7,6 +7,7 @@ import casadi.*
 kappa_lut =interpolant('kappa_lut','linear',{track.s_traj},track.kappa_traj);
 n_l_lut =interpolant('n_l_lut','linear',{track.s_traj},track.nl_traj);
 n_r_lut =interpolant('n_r_lut','linear',{track.s_traj},track.nr_traj);
+
 
 
 
@@ -73,7 +74,7 @@ Lf= Wheelbase/2;
 Lr= Wheelbase/2;
 
 % Rotational inertia
-Iz=1/12*mass*(0.5^2 + track_width^2); %0.5 are the car length
+Iz = 1/12 * mass * (0.5^2 + track_width^2); %0.5 are the car length
 %Iz=length*mass*Wheelbase^2; % 0.3 are de mass disturbation
 
 
@@ -88,8 +89,8 @@ delta       = x(7); % δ
 throttle    = x(8); % T
 
 % Entradas
-d_delta = (u(1)-delta)/Ds;
-d_throttle  = (u(2)-throttle)/Ds;
+d_delta = (u(1)-delta)/Ts;
+d_throttle  = (u(2)-throttle)/Ts;
 
 % Normal loads on the tires
 Fn_f = Lr/(Lf+Lr) *mass *g;   
@@ -110,6 +111,15 @@ alfa_r = atan((-vy + Lr* yaw_rate)/(vx+v0));
 Fy_f = Fn_f * Df * sin(Cf * atan(Bf*alfa_f)); 
 Fy_r = Fn_r * Dr * sin(Cr * atan(Br*alfa_r));
 
+
+% Fy_f=0;
+% Fy_r=0;
+
+log.Fy_f=Fy_f;
+log.Fy_r=Fy_r;
+log.alfa_f=alfa_f;
+log.alfa_r=alfa_r;
+
 % Fy_f = Fn_f * Df * sin(Cf * atan(Bf*alfa_f - Ef * (Bf * alfa_f - atan(Bf * alfa_f)))); 
 % Fy_r = Fn_r * Dr * sin(Cr * atan(Br*alfa_r - Er * (Br * alfa_r - atan(Br * alfa_r))));
 
@@ -121,7 +131,7 @@ sign_vx = vx / sqrt(vx^2 + epsilon);
 % Force x
 Fx = Fm - Frr * sign_vx;
 
-kappa= kappa_lut (s);
+kappa= kappa_lut(s);
 nl_s= n_l_lut(s);
 nr_s = n_r_lut(s);
 
@@ -131,7 +141,7 @@ nr_s = n_r_lut(s);
 
 % disp([kappa,nl_s, nr_s])
 
-d_s = vx*cos(heading_u) - vy*sin(heading_u)/(1-n*kappa);
+d_s = (vx*cos(heading_u) - vy*sin(heading_u))/(1-n*kappa);
 
 d_n = vx*sin(heading_u) + vy*cos(heading_u);
 
@@ -155,10 +165,13 @@ f_expl = [ ...
         d_throttle
         ];
 
-disp([Fy_f,Fy_r])
 
 
+log.Fy_f=Fy_f;
+log.Fy_r=Fy_r;
+log.alfa_f=alfa_f;
+log.alfa_r=alfa_r;
 
-x_next=x+Ds*f_expl;
+x_next=x+Ts*f_expl;
 
 end
