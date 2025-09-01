@@ -53,13 +53,13 @@ nr_traj =track.nr_traj ;
 % 
 % nr_traj = [ nr_traj(1:end-1); nr_traj ; nr_traj(2:end)];
 
-s_traj = [s_traj ; s_traj(end) + s_traj(2:end)];
-
-kappa_traj = [kappa_traj ;  kappa_traj(2:end)];
-
-nl_traj = [nl_traj; nl_traj(2:end)];
-
-nr_traj = [nr_traj ; nr_traj(2:end)];
+% s_traj = [s_traj ; s_traj(end) + s_traj(2:end)];
+% 
+% kappa_traj = [kappa_traj ;  kappa_traj(2:end)];
+% 
+% nl_traj = [nl_traj; nl_traj(2:end)];
+% 
+% nr_traj = [nr_traj ; nr_traj(2:end)];
 
 kappa_lut =interpolant('kappa_lut_l','linear',{s_traj},kappa_traj);
 n_l_lut =interpolant('n_l_lut_l','linear',{s_traj},nl_traj);
@@ -184,29 +184,35 @@ term2 = (track_width / 2) * cos(heading_u);
 
 b_left = n - term1 + term2;
 b_right= -n + term1 + term2;
+b_left=0.1;
+b_right=0.1;
 
 %% Tires friction ellipse
 phi_F = (rho_long*Fm/2)^2 + Fy_f^2  -  (lambda_f*Df)^2;
 phi_R = (rho_long*Fm/2)^2 + Fy_r^2  -  (lambda_r*Dr)^2;
 
 %% Nonlinear constraints
-%  model.con_h_expr=[...     
-%      b_left;
-%      b_right%;
-% %     % phi_F;
-% %     % phi_R        
-%     ];
-% 
-% model.con_h_expr_0= model.con_h_expr;
+ model.con_h_expr=[...     
+     b_left;
+     b_right%;
+%     % phi_F;
+%     % phi_R        
+    ];
+
+ model.con_h_expr_0= model.con_h_expr;
 
 %model.con_h_expr =[];
 
 infty = get_acados_infty();                     % for one-sided constraints
+% constraints.lb_h = [-infty; -infty ];
+% constraints.ub_h = [nl_s; nr_s];
 constraints.lb_h = [-infty; -infty ];
-constraints.ub_h = [nl_s; nr_s];
+constraints.ub_h = [infty; infty];
 % constraints.lb_h = [-infty; -infty; -infty; -infty];
 % constraints.ub_h = [nl_s; nr_s; 0; 0];
 % 
+% constraints.lb_h = [-infty; -infty ];
+% constraints.ub_h = [nl_s; nr_s];
 
 
 %% State bounds
@@ -241,8 +247,8 @@ uexpr    = u.' * R * u;
 epsilon_cost = 1e-10;
 % L_stage = -8*(Ts*d_s) + 40*n^2+ 10*heading_u^2 + uexpr ;%+ Bexpr;     % (1×1) OK
 % L_stage_e = -8*(Ts*d_s) + 40*n^2+ 10*heading_u^2 ;%+ Bexpr;
-L_stage = -8*(Ts*d_s) + 80*n^2+ 20*heading_u^2 + uexpr ;%+ Bexpr;     % (1×1) OK
-L_stage_e = -8*(Ts*d_s) + 80*n^2+ 20*heading_u^2 ;%+ Bexpr;
+L_stage = -8*(Ts*d_s) + 10*n^2+ 20*heading_u^2 + uexpr + 300*Bexpr;     % (1×1) OK
+L_stage_e = -8*(Ts*d_s) + 10*n^2+ 20*heading_u^2 +300*Bexpr;
 
 model.cost_expr_ext_cost = L_stage;
 model.cost_expr_ext_cost_0 = L_stage;

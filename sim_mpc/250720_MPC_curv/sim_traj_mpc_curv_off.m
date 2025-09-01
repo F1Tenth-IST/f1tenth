@@ -253,6 +253,8 @@ for t_idx = 1:T_s_total/Ts-1
         disp(["Sucess Solved"]);
     end
     solver.print('stat')
+    x
+    J = solver.get('cost_value')
 
     u = solver.get('u', 0);
 
@@ -376,7 +378,8 @@ ylabel('Y [m]');
 title('Trajetória com velocidade como cor');
 axis equal;
 
-if false:
+
+if false
     figure('Color','w');
     hold on;
     xlabel('X [m]');

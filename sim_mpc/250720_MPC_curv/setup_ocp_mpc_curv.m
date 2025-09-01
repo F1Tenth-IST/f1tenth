@@ -92,6 +92,14 @@ function [solver, model_var] = setup_ocp_mpc_curv(N, Ts, R, track)
     ocp.constraints.ubx_0 = [constraints.heading_max;constraints.delta_max; constraints.throttle_max];
 
 
+    if (~isempty(ocp.model.con_h_expr))
+        ocp.constraints.lh = constraints.lb_h;
+        ocp.constraints.uh = constraints.ub_h;
+        ocp.constraints.lh_0 = constraints.lb_h;
+        ocp.constraints.uh_0 = constraints.ub_h; 
+    end
+
+
 
     %servo_max_rate = p(2);       % velocidade angular máxima (rad/s)
     % servo_max_rate = 5.2360/10;
