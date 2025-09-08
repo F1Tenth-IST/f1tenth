@@ -17,11 +17,11 @@ N = 20; % Horizonte do MPC
 %% Parâmetros do MPC
 %p= [weight_ds; weight_beta; weight_dalpha; weight_dthrottle; safety_margin];
 
-weight_ds = 15;
-weight_beta = 0.1;
+weight_ds = 16;
+weight_beta = 0.15;
 weight_dalpha = 1;
 weight_dthrottle = 1;
-safety_margin = 0.1; % 5 cm
+safety_margin = 0.1; % 10 cm
 
 p=[weight_ds; weight_beta; weight_dalpha; weight_dthrottle; safety_margin];
 

@@ -19,8 +19,8 @@ function [solver, model_var] = setup_ocp_mpc_curv(N,p ,Ts, track)
 
     % Constraints Entradas
     ocp.constraints.idxbu = [0;1];
-    ocp.constraints.lbu = [constraints.ddelta_min; constraints.dthrottle_min];
-    ocp.constraints.ubu = [constraints.ddelta_max; constraints.dthrottle_max];
+    ocp.constraints.lbu = [constraints.delta_min; constraints.throttle_min];
+    ocp.constraints.ubu = [constraints.delta_max; constraints.throttle_max];
 
     
 

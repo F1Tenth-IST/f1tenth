@@ -14,7 +14,7 @@ MPCNode::MPCNode() : Node("mpc_node"),
     RCLCPP_INFO(this->get_logger(), "MPC Node initialized.");
     // Declare parameters
     this->declare_parameter<std::string>("odom_topic", "/odometry/filtered");
-    this->declare_parameter<std::string>("traj_file", "traj/pts/centerline_map_2025-07-16_15-28-18.csv");
+    this->declare_parameter<std::string>("traj_file", "../../traj/centerline_v2_map_2025-07-16_15-28-18.csv");
     this->declare_parameter<std::string>("frame_id", "odom");
     this->declare_parameter<std::string>("pose_topic", "/pose");
 
@@ -113,15 +113,35 @@ MPCNode::MPCNode() : Node("mpc_node"),
     // precompute
     // ocp_nlp_precompute(nlp_solver_, nlp_in_, nlp_out_);
 
-    double p = (1.0 / frequency); // Ts é o teu tempo de amostragem
+    // Define weights and safety margin
+    double weight_ds = 15.0;
+    double weight_beta = 0.15;
+    double weight_dalpha = 1.0;
+    double weight_dthrottle = 1.0;
+    double safety_margin = 0.1; // 10 cm
 
-    // ocp_nlp_set_all(nlp_solver_, nlp_in_, nlp_out_, "p", &p); // Set the parameter p
+    // Parameter vector
+    std::vector<double> p = {weight_ds, weight_beta, weight_dalpha, weight_dthrottle, safety_margin};
 
     int idx = 0; // Index for the parameter
     for (int i = 0; i < MPC_MODEL_N; i++)
     {
-        ocp_nlp_in_set_params_sparse(nlp_config_, nlp_dims_, nlp_in_, i, &idx, &p, 1);
+        ocp_nlp_in_set_params_sparse(nlp_config_, nlp_dims_, nlp_in_, i, &idx, p.data(), p.size());
     }
+
+    // Set print level 0
+    int print_level = 0;
+    ocp_nlp_solver_opts_set(nlp_config_, nlp_opts_, "print_level", &print_level);
+
+    // Init the states 
+    current_state_.s = 0.1;
+    current_state_.n = 0.1;
+    current_state_.u = 0.1;
+    current_state_.vx = 0.1;
+    current_state_.vy = 0.1;
+    current_state_.r = 0.0;
+    current_state_.delta = 0.0;
+    current_state_.T = 0.0;
 
     // Set up a timer to solve MPC at a fixed frequency
     timer_ = this->create_wall_timer(
@@ -143,11 +163,11 @@ void MPCNode::solveMPC()
         return;
     }
 
-   /*  if (std::isnan(current_state_.x) || std::isnan(current_state_.y) || reference_trajectory_.x.empty() || reference_trajectory_.y.empty())
+    if (std::isnan(current_state_.s) || std::isnan(current_state_.n) || reference_trajectory_.x.empty() || reference_trajectory_.y.empty())
     {
         RCLCPP_WARN(this->get_logger(), "State or reference trajectory is empty. Skipping MPC solve.");
         return;
-    } */
+    } 
 
     // Get the reference trajectory to horizont
     // set_trajectory_step();

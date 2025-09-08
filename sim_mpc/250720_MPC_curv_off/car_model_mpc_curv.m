@@ -111,7 +111,7 @@ Cm = 75;
 
 % rolling resistance force Frr - Desacelaration when stop Duty =
 % acc_x=1.5 m/s2 F= 4.5N
-Frr = 2.5;
+Frr = 4.5;
 epsilon = 1e-3;
 
 % Tires friction ellipse params
@@ -211,7 +211,7 @@ phi_R = (rho_long*Fm/2)^2 + Fy_r^2  -  (lambda_r*Dr)^2;
     % phi_R        
   ];
 
- model.con_h_expr_0= model.con_h_expr;
+model.con_h_expr_0= model.con_h_expr;
 
 %model.con_h_expr =[];
 
@@ -243,8 +243,8 @@ constraints.heading_idx = 2;
 %% Input bounds
 constraints.ddelta_min = -servo_max_rate*Ts;  % minimum change rate of stering angle [rad/s]
 constraints.ddelta_max = servo_max_rate*Ts;  % maximum change rate of steering angle [rad/s]
-constraints.dthrottle_min = -1*Ts;  % -10.0  % minimum throttle change rate
-constraints.dthrottle_max = 1*Ts;  % 10.0  % maximum throttle change rat
+constraints.dthrottle_min = -1.2*Ts;  % -10.0  % minimum throttle change rate
+constraints.dthrottle_max = 1.2*Ts;  % 10.0  % maximum throttle change rat
 
 
 
@@ -266,7 +266,7 @@ epsilon_cost = 1e-10;
 % L_stage_e = -8*(Ts*d_s) + 40*n^2+ 10*heading_u^2 ;%+ Bexpr;
 % L_stage =-8*(Ts*d_s+0.01) + 5*n^2+ 5*heading_u^2 +Bexpr%+ uexpr %+ 300*Bexpr;     % (1×1) OK
 % L_stage_e = -8*(Ts*d_s+0.01)+ 5*n^2+ 5*heading_u^2 +Bexpr;
-L_stage = weight_ds*0.01/(d_s) + Bexpr  + uexpr;
+L_stage = weight_ds*0.01/(d_s) + Bexpr + uexpr;
 L_stage_e = weight_ds*0.01/(d_s) + Bexpr;
 
 model.cost_expr_ext_cost = L_stage;
