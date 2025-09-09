@@ -96,6 +96,7 @@ def generate_launch_description():
         'lidar_config',
         default_value=lidar_config,
         description='Descriptions for sensor configs')
+    
     mux_la = DeclareLaunchArgument(
         'mux_config',
         default_value=mux_config,
@@ -139,12 +140,14 @@ def generate_launch_description():
         name='joy',
         parameters=[LaunchConfiguration('joy_config')]
     )
+    
     joy_teleop_node = Node(
         package='joy_teleop',
         executable='joy_teleop',
         name='joy_teleop',
         parameters=[LaunchConfiguration('joy_config')]
     )
+    
     ackermann_to_vesc_node = Node(
         package='vesc_ackermann',
         executable='ackermann_to_vesc_node',

@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # === 1. Carregar mapa binário (0 = livre, 1 = obstáculo)
-map_files = "./maps/test_map/map_output"
+map_files = "./maps/map_2025-09-09_10-52-29/map_output"
 
 map_path = map_files + ".pgm"
 
@@ -111,7 +111,7 @@ def smooth_points(points, window_length=51, polyorder=3):
     smoothed_y = savgol_filter(points[:, 1], window_length=window_length, polyorder=polyorder, mode='wrap')
     return np.column_stack([smoothed_x, smoothed_y])
 
-smoothed_points = smooth_points(smoothed_points, window_length=200, polyorder=3) 
+smoothed_points = smooth_points(smoothed_points, window_length=201, polyorder=3) 
 
 # === 7. Plot the smoothed points
 plt.figure(figsize=(10, 6))

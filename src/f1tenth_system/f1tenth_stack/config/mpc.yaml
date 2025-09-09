@@ -8,7 +8,14 @@ mpc:
     #pose_topic: "/pose"  # Pose topic, leave empty "" if not using pose
     pose_topic: "/tracked_pose"  # Pose topic, leave empty "" if not using pose
 
-    traj_file: "traj/pts/centerline_map_2025-07-16_15-28-18.csv" # Trajectory file
+    traj_file: "traj/centerline_v2_map_2025-09-09_10-52-29.csv" # Trajectory file
     #traj_file: "traj/pts/oito_n1000_a2.5_b1.8_v1.0.csv" # Trajectory file
+
+    cost_wheights:
+      position_x: 10.0  # Weight for position cost
+      position_y: 10.0  # Weight for position cost
+      orientation: 1.0  # Weight for orientation cost
+      velocity: 1.0  # Weight for velocity cost
+      steering: 1.0  # Weight for acceleration cost
 
     frame_id: "map"  # Frame ID for the trajectory

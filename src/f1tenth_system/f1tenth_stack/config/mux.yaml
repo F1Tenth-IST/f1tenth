@@ -9,3 +9,7 @@ ackermann_mux:
         topic   : teleop
         timeout : 0.2
         priority: 100
+      autonomous_control:
+        topic   : autonomous_control
+        timeout : 0.2
+        priority: 20

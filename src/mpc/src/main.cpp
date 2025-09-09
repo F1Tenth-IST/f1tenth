@@ -14,7 +14,7 @@ MPCNode::MPCNode() : Node("mpc_node"),
     RCLCPP_INFO(this->get_logger(), "MPC Node initialized.");
     // Declare parameters
     this->declare_parameter<std::string>("odom_topic", "/odometry/filtered");
-    this->declare_parameter<std::string>("traj_file", "../../traj/centerline_v2_map_2025-07-16_15-28-18.csv");
+    this->declare_parameter<std::string>("traj_file", "./traj/centerline_v2_map_2025-09-09_10-52-29.csv");
     this->declare_parameter<std::string>("frame_id", "odom");
     this->declare_parameter<std::string>("pose_topic", "/pose");
 
@@ -33,7 +33,7 @@ MPCNode::MPCNode() : Node("mpc_node"),
     }
 
     // Publishers and Subscribers
-    control_vesc_pub_ = this->create_publisher<ackermann_msgs::msg::AckermannDriveStamped>("ackermann_cmd", 10);
+    control_vesc_pub_ = this->create_publisher<ackermann_msgs::msg::AckermannDriveStamped>("autonomous_control", 10);
     solved_time_pub_ = this->create_publisher<std_msgs::msg::Float64>("mpc/solved_time", 10);
     ref_path_pub_ = this->create_publisher<nav_msgs::msg::Path>("mpc/ref_path", 10);
     reference_trajectory_pub_ = this->create_publisher<nav_msgs::msg::Path>("mpc/ref_traj", rclcpp::QoS(rclcpp::KeepLast(1)).transient_local());
@@ -44,7 +44,7 @@ MPCNode::MPCNode() : Node("mpc_node"),
     for (int i = 0; i < 2; i++)
         control_vector_pub_[i] = this->create_publisher<std_msgs::msg::Float64MultiArray>("mpc/predict_u" + std::to_string(i), 10);
 
-    for (int i = 0; i < 5; i++)
+    for (int i = 0; i < 8; i++)
         state_vector_pub_[i] = this->create_publisher<std_msgs::msg::Float64MultiArray>("mpc/predict_x" + std::to_string(i), 10);
 
     odom_sub_ = this->create_subscription<nav_msgs::msg::Odometry>(
@@ -121,12 +121,12 @@ MPCNode::MPCNode() : Node("mpc_node"),
     double safety_margin = 0.1; // 10 cm
 
     // Parameter vector
-    std::vector<double> p = {weight_ds, weight_beta, weight_dalpha, weight_dthrottle, safety_margin};
+    double p[5] = {weight_ds, weight_beta, weight_dalpha, weight_dthrottle, safety_margin};
+    int idxs[5] = {0, 1, 2, 3, 4}; // indices for the parameters
 
-    int idx = 0; // Index for the parameter
     for (int i = 0; i < MPC_MODEL_N; i++)
     {
-        ocp_nlp_in_set_params_sparse(nlp_config_, nlp_dims_, nlp_in_, i, &idx, p.data(), p.size());
+        ocp_nlp_in_set_params_sparse(nlp_config_, nlp_dims_, nlp_in_, i, idxs, p, 5);
     }
 
     // Set print level 0
@@ -195,12 +195,15 @@ void MPCNode::solveMPC()
                             current_state_vector_[1],
                             current_state_vector_[2],
                             current_state_vector_[3],
-                            current_state_vector_[4]};
+                            current_state_vector_[4],
+                            current_state_vector_[5],
+                            current_state_vector_[6],
+                            current_state_vector_[7]};
     state_pub_->publish(state_array_msg);
 
     // Solve the MPC problem
-    int status = ocp_nlp_solve(nlp_solver_, nlp_in_, nlp_out_);
-    // int status = mpc_model_acados_solve(capsule);
+    // int status = ocp_nlp_solve(nlp_solver_, nlp_in_, nlp_out_);
+    int status = mpc_model_acados_solve(capsule);
     //  mpc_model_acados_print_stats(capsule);
     /* std::vector<double> xtraj((MPC_MODEL_N + 1) * 6);
     std::vector<double> utraj(MPC_MODEL_N * 2);
@@ -222,7 +225,7 @@ void MPCNode::solveMPC()
     {
         RCLCPP_ERROR(this->get_logger(), "ACADOS solver failed with status %d", status);
         solved_time = -1.0;
-        return;
+        control_output = {current_state_.delta, current_state_.T}; // Maintain current control if solver fails
     }
     else
     {
@@ -237,13 +240,13 @@ void MPCNode::solveMPC()
     solved_time_msg.data = solved_time;
     solved_time_pub_->publish(solved_time_msg);
 
-    RCLCPP_INFO(this->get_logger(), "Solved time: %.2f milliseconds", solved_time*1000);
+    RCLCPP_INFO(this->get_logger(), "Solved time: %.2f milliseconds", solved_time * 1000);
 
     ackermann_msgs::msg::AckermannDriveStamped control_vesc_msg;
     control_vesc_msg.header.stamp = this->get_clock()->now();
     control_vesc_msg.header.frame_id = "base_link";
     control_vesc_msg.drive.steering_angle = control_output[0] * steering_angle_to_servo_gain;
-    control_vesc_msg.drive.acceleration = control_output[1] * speed_to_duty;
+    control_vesc_msg.drive.acceleration = control_output[1];
 
     // Publish control output
     control_vesc_pub_->publish(control_vesc_msg);
@@ -254,7 +257,7 @@ void MPCNode::solveMPC()
     control_pub_->publish(control_array_msg);
 
     // Publish control vector
-    std::vector<double> predict_vector_u0(MPC_MODEL_N), predict_vector_u1(MPC_MODEL_N);
+    /* std::vector<double> predict_vector_u0(MPC_MODEL_N), predict_vector_u1(MPC_MODEL_N);
     for (int ii = 0; ii < MPC_MODEL_N; ii++)
     {
         std::array<double, 2> control_vector;
@@ -266,27 +269,28 @@ void MPCNode::solveMPC()
     predict_u0_msg.data = predict_vector_u0;
     predict_u1_msg.data = predict_vector_u1;
     control_vector_pub_[0]->publish(predict_u0_msg);
-    control_vector_pub_[1]->publish(predict_u1_msg);
+    control_vector_pub_[1]->publish(predict_u1_msg); */
 
     // Publish state vector
-    // Create a vector of 5 vectors, each with MPC_MODEL_N+1 elements
-    std::vector<std::vector<double>> predict_vector_x(5, std::vector<double>(MPC_MODEL_N + 1));
+    // Create a vector of 8 vectors, each with MPC_MODEL_N+1 elements
+   /*  std::vector<std::vector<double>> predict_vector_x(8, std::vector<double>(MPC_MODEL_N + 1));
     for (int ii = 0; ii <= MPC_MODEL_N; ii++)
     {
-        std::array<double, 5> state_vector;
+        std::array<double, 8> state_vector;
         ocp_nlp_out_get(nlp_config_, nlp_dims_, nlp_out_, ii, "x", state_vector.data());
         // Fill predict_vector_x: [x, y, yaw, theta, v]
-        for (int j = 0; j < 5; j++)
+        for (int j = 0; j < 8; j++)
         {
             predict_vector_x[j][ii] = state_vector[j];
         }
     }
-    std::vector<std_msgs::msg::Float64MultiArray> state_vector_msgs(5);
-    for (int i = 0; i < 5; i++)
+
+    std::vector<std_msgs::msg::Float64MultiArray> state_vector_msgs(8);
+    for (int i = 0; i < 8; i++)
     {
         state_vector_msgs[i].data = predict_vector_x[i];
         state_vector_pub_[i]->publish(state_vector_msgs[i]);
-    }
+    } */
 
     /*  // Publish simulation trajectory
      nav_msgs::msg::Path simulation_path;
@@ -304,8 +308,9 @@ void MPCNode::solveMPC()
          simulation_path.poses.push_back(pose);
      }
      simulation_trajectory_pub_->publish(simulation_path); */
-
-} // RCLCPP_INFO(this->get_logger(), "Current steering angle: %f", current_state_.steering_angle);
+     
+    // RCLCPP_INFO(this->get_logger(), "Current steering angle: %f", current_state_.steering_angle);
+} 
 
 /* void MPCNode::set_trajectory_step()
 {
