@@ -8,7 +8,8 @@ import pandas as pd
 from shapely.geometry import LineString, Point
 
 # === 1. Carregar mapa binário (0 = livre, 1 = obstáculo)
-map_files = "../maps/map_2025-09-09_10-52-29/map_output"
+#map_files = "../maps/map_2025-09-09_10-52-29/map_output"
+map_files = "../maps/test_map/map_output"
 
 map_path = map_files + ".pgm"
 
@@ -128,7 +129,7 @@ total_length_px = s[-1]
 print(f"Comprimento total da centerline: {total_length_px*resolution:.2f} metros")
 
 
-amostragem = 0.01  # em metros
+amostragem = 0.1  # em metros
 
 # Amostrar pontos a cada 0.01m usando interpolação linear
 s_uniform = np.arange(0, total_length_px * resolution + amostragem, amostragem)
@@ -156,7 +157,7 @@ def smooth_points(points, window_length=51, polyorder=3):
     smoothed_y = savgol_filter(points[:, 1], window_length=window_length, polyorder=polyorder, mode='wrap')
     return np.column_stack([smoothed_x, smoothed_y])
 
-window_length = 0.01 / resolution / amostragem  # janela de 0.1m
+window_length = 0.2 / resolution / amostragem  # janela de 0.1m
 
 print(f"Window length points: {window_length}")
 
@@ -189,8 +190,8 @@ x = np.concatenate([x[start_index:], x[:start_index]])
 y = np.concatenate([y[start_index:], y[:start_index]])
 
 # Inverter sentido da trajetória (reverse direction)
-x = x[::-1]
-y = y[::-1]
+""" x = x[::-1]
+y = y[::-1] """
 
 from scipy.interpolate import CubicSpline
 
@@ -205,17 +206,18 @@ print(f"Total length after smoothing: {s[-1]:.2f} meters")
 
 # Ensure uniform sampling with proper floating-point precision
 s_uniform = np.arange(0, s[-1], amostragem)
-s_3x = np.arange(-s[-1], 2 * s[-1], 0.01)
+s_3x = np.arange(-s[-1], 2 * s[-1], amostragem)
 
-x_s = spline_x(s_3x)
-y_s = spline_y(s_3x)
+x_s = spline_x(s_3x %  s[-1])
+y_s = spline_y(s_3x %  s[-1])
 dx = np.gradient(x_s, s_3x %  s[-1] )
 dy = np.gradient(y_s, s_3x %  s[-1] )
 
 ddx = np.gradient(dx, s_3x %  s[-1] )
 ddy = np.gradient(dy, s_3x %  s[-1] )
 
-kappa_d = (dx * ddy - dy * ddx) / (dx**2 + dy**2)**1.5
+kappa = (dx * ddy - dy * ddx) / (dx**2 + dy**2)**1.5
+kappa_d = kappa.copy()
 
 
 # 2) filtro passa-baixo em κ, periódico em s
@@ -224,9 +226,11 @@ from scipy.ndimage import gaussian_filter1d
 s_step = 0.01  # usa o mesmo passo que o teu MPC por distância (Δs_MPC)
 fwhm_m = 0.1  # largura de suavização em metros (ajusta: 0.15–0.40 m p/ F1TENTH)
 sigma_samples = (fwhm_m / 2.355) / s_step
-kappa = gaussian_filter1d(kappa_d, sigma=sigma_samples, mode='wrap')
+#kappa = gaussian_filter1d(kappa, sigma=sigma_samples, mode='wrap')
 
 s_index = np.searchsorted(s_3x, s_uniform)  # Retorna os índices correspondentes
+
+print(f"s_index: {s_index}")
 
 
 
@@ -483,7 +487,7 @@ print(f"len(n_r): {len(n_r)}")
 last_folder_name = os.path.basename(os.path.dirname(map_path))
 print(f"Last folder name: {last_folder_name}")
 
-filename = "centerline_v2_" + last_folder_name + ".csv"
+filename = "centerline_" + last_folder_name + ".csv"
 
 
 # Export to CSV
@@ -517,7 +521,7 @@ plt.show()
 
 
 
-psi = np.cumsum(kappa[:-1] * 0.01);  # Integração numérica da curvatura ao longo do comprimento da trajetória
+psi = np.cumsum(kappa[:-1] * amostragem);  # Integração numérica da curvatura ao longo do comprimento da trajetória
 
 psi_init = np.arctan2(y_s[1] - y_s[0], x_s[1] - x_s[0])
 
