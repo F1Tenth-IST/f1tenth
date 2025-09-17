@@ -253,7 +253,9 @@ def bicycle_model(
         + weight_ddelta * derDelta**2
     )
     model.cost_expr_ext_cost_e = terminal_multiplier * (
-        weight_qn * (n) ** 2 + weight_qalpha * theta**2 - weight_qv * (v_x)
+        weight_qn * (n) ** 2 
+        + weight_qalpha * theta**2 
+        - weight_qv * (v_x)
     )
 
     """ model.cost_expr_ext_cost_0 = weight_qn * (n)**2 + weight_qalpha * theta**2 - weight_qv * \

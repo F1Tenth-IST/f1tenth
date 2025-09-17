@@ -203,8 +203,8 @@ def acados_settings(
     # set QP solver and integration
     ocp.solver_options.tf = stmpc_config.N / stmpc_config.MPC_freq
     ocp.solver_options.qp_solver = "PARTIAL_CONDENSING_HPIPM"
-    ocp.solver_options.nlp_solver_type = "SQP_RTI"
-    ocp.solver_options.hessian_approx = "GAUSS_NEWTON"  # NOTE: do not believe the acados warning, setting hessian approximation to "EXACT" makes the solver fail
+    ocp.solver_options.nlp_solver_type = "SQP"
+    ocp.solver_options.hessian_approx = "EXACT"  # NOTE: do not believe the acados warning, setting hessian approximation to "EXACT" makes the solver fail
     ocp.solver_options.integrator_type = "ERK"
     ocp.solver_options.sim_method_num_stages = 4
     ocp.solver_options.sim_method_num_steps = 3
