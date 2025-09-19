@@ -18,7 +18,13 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 import numpy as np
+import matplotlib
+
+matplotlib.use('TkAgg')
+matplotlib.rcParams['figure.raise_window'] = False  # não trazer a janela para a frente
+
 import matplotlib.pyplot as plt
+
 from aux_func import frenet_to_global
 
 def _ensure_2d(a: np.ndarray) -> np.ndarray:
@@ -53,7 +59,6 @@ def init_sim_plot(tr, d_left, d_right, x0):
 
     [x, y, psi] = frenet_to_global(x0[0], x0[1], x0[2], tr)
 
-    
     fig, ax = plt.subplots(figsize=(10, 6))
     vehicle_arrow = ax.arrow(x, y, 1 * np.cos(psi), 1 * np.sin(psi),
                             head_width=0.5, head_length=0.6, fc='black', ec='black', label="Vehicle",zorder=2)
@@ -72,14 +77,22 @@ def init_sim_plot(tr, d_left, d_right, x0):
     ax.grid()
     
     plt.ion()
+    w = fig.canvas.manager.window
+    try:
+        # Exemplo: posição x=2000, y=100 (ajuste conforme sua resolução/arranjo de monitores)
+        w.geometry("+2000+100")
+        w.state("zoomed")
+    except Exception:
+        pass
     plt.show()
     
     return fig
     
 def update_sim_plot(fig, tr, d_left, d_right, x_horizon, status):
-    if not plt.fignum_exists(fig.number):
+    
+    """ if not plt.fignum_exists(fig.number):
         print("Figure closed. Exiting...")
-        exit()
+        exit() """
 
     print("Updating simulation plot...")
     
@@ -110,11 +123,11 @@ def update_sim_plot(fig, tr, d_left, d_right, x_horizon, status):
     # Refresh the same figure
     fig.canvas.draw()
     fig.canvas.flush_events()
-    
+ 
     return fig
     
 
-def plot_all(x_hist: np.ndarray, u_hist: np.ndarray, dt: float,
+def plot_states(mpc_self,x_hist: np.ndarray, u_hist: np.ndarray, dt: float,
              save_prefix: str | None = None, show: bool = True):
     """Create time-series plots for states & inputs.
 
@@ -129,41 +142,90 @@ def plot_all(x_hist: np.ndarray, u_hist: np.ndarray, dt: float,
     """
     x_hist = _ensure_2d(x_hist)
     u_hist = _ensure_2d(u_hist)
-    T = x_hist.shape[0] - 1
-    t = np.arange(x_hist.shape[0]) * float(dt)
-    tu = np.arange(u_hist.shape[0]) * float(dt)
+    T = np.count_nonzero(x_hist[:, 0])
+    t = np.arange(1, T+1) * float(dt)
+    tu = np.arange(1, T) * float(dt)
+    x_hist = x_hist[:T, :]
+    u_hist = u_hist[:T-1, :]
 
     # --- States ---
     fig1, axes = plt.subplots(3, 1, sharex=True, figsize=(8, 7))
-    axes[0].plot(t, x_hist[:, 0])
+    axes[0].plot(t, x_hist[:, 0], 'o-', label="s [m]")
     axes[0].set_ylabel("s [m]")
     if x_hist.shape[1] > 1:
-        axes[1].plot(t, x_hist[:, 1])
+        axes[1].plot(t, x_hist[:, 1], 'o-', label="n [m]")
         axes[1].set_ylabel("n [m]")
     if x_hist.shape[1] > 2:
-        axes[2].plot(t, x_hist[:, 2])
+        axes[2].plot(t, x_hist[:, 2], 'o-', label="theta [rad]")
         axes[2].set_ylabel("theta [rad]")
     axes[-1].set_xlabel("t [s]")
+    for ax in axes:
+        ax.legend()
     fig1.tight_layout()
 
     # --- Velocities/Yaw ---
     if x_hist.shape[1] >= 7:
         fig2, axes2 = plt.subplots(3, 1, sharex=True, figsize=(8, 7))
-        axes2[0].plot(t, x_hist[:, 3]); axes2[0].set_ylabel("v_x [m/s]")
-        axes2[1].plot(t, x_hist[:, 4]); axes2[1].set_ylabel("v_y [m/s]")
-        axes2[2].plot(t, x_hist[:, 6]); axes2[2].set_ylabel("yaw_rate [rad/s]")
+        axes2[0].plot(t, x_hist[:, 3], 'o-', label="v_x [m/s]")
+        axes2[0].set_ylabel("v_x [m/s]")
+        axes2[1].plot(t, x_hist[:, 4], 'o-', label="v_y [m/s]")
+        axes2[1].set_ylabel("v_y [m/s]")
+        axes2[2].plot(t, x_hist[:, 5], 'o-', label="yaw_rate [rad/s]")
+        axes2[2].set_ylabel("yaw_rate [rad/s]")
         axes2[-1].set_xlabel("t [s]")
+        for ax in axes2:
+            ax.legend()
         fig2.tight_layout()
     else:
         fig2 = None
 
     # --- Inputs ---
     fig3, axes3 = plt.subplots(2, 1, sharex=True, figsize=(8, 6))
-    axes3[0].plot(tu, u_hist[:, 0]); axes3[0].set_ylabel("jerk [m/s^3]")
-    if u_hist.shape[1] > 1:
-        axes3[1].plot(tu, u_hist[:, 1]); axes3[1].set_ylabel("ddelta [rad/s]")
+    axes3[0].plot(tu, u_hist[:, 1], 'o-', label="dthrottle [m/s^3]")
+    axes3[0].set_ylabel("dthrottle [m/s^3]")
+    axes3[1].plot(tu, u_hist[:, 0], 'o-', label="ddelta [rad/s]")
+    axes3[1].set_ylabel("ddelta [rad/s]")
     axes3[-1].set_xlabel("t [s]")
+    for ax in axes3:
+        ax.legend()
     fig3.tight_layout()
+
+    fig4, ax4 = plt.subplots(2, 1, sharex=True, figsize=(8, 6))
+    ax4[0].plot(t, x_hist[:, 7], 'o-', label="throttle [m/s^2]")
+    ax4[0].set_ylabel("throttle [m/s^2]")
+    ax4[1].plot(t, x_hist[:, 6], 'o-', label="delta [rad]")
+    ax4[1].set_ylabel("delta [rad]")
+    ax4[-1].set_xlabel("t [s]")
+    for ax in ax4:
+        ax.legend()
+    fig4.tight_layout()
+
+    fig5, ax5 = plt.subplots(6, 1, sharex=True, figsize=(8, 6))
+    ax5[0].plot(t, mpc_self.Fz_f, 'o-', label="Fz_f [N]")
+    ax5[0].set_ylabel("Fz_f [N]")
+    ax5[1].plot(t, mpc_self.Fz_r, 'o-', label="Fz_r [N]")
+    ax5[1].set_ylabel("Fz_r [N]")
+    ax5[2].plot(t, mpc_self.Fx_f, 'o-', label="Fx_f [N]")
+    ax5[2].set_ylabel("Fx_f [N]")
+    ax5[3].plot(t, mpc_self.Fx_r, 'o-', label="Fx_r [N]")
+    ax5[3].set_ylabel("Fx_r [N]")
+    ax5[4].plot(t, mpc_self.Fy_f, 'o-', label="Fy_f [N]")
+    ax5[4].set_ylabel("Fy_f [N]")
+    ax5[5].plot(t, mpc_self.Fy_r, 'o-', label="Fy_r [N]")
+    ax5[5].set_ylabel("Fy_r [N]")
+    ax5[-1].set_xlabel("t [s]")
+    for ax in ax5:
+        ax.legend()
+    fig5.tight_layout()
+    
+    ax6 = plt.figure(figsize=(8, 4)).gca()
+    ax6.plot(t, mpc_self.alpha_f, 'o-', label="alpha_f [rad]")
+    ax6.plot(t, mpc_self.alpha_r, 'o-', label="alpha_r [rad]")
+    ax6.set_ylabel("Slip Angles [rad]")
+    ax6.set_xlabel("t [s]")
+    ax6.legend()
+    ax6.grid()
+    plt.tight_layout()
 
     # Save/show
     if save_prefix is not None:
@@ -177,7 +239,7 @@ def plot_all(x_hist: np.ndarray, u_hist: np.ndarray, dt: float,
         print(f"Saved: {out1}{', ' + out2 if fig2 is not None else ''}, {out3}")
 
     if show:
-        plt.show()
+        plt.show(block=True)
 
 
 def main():
@@ -192,7 +254,7 @@ def main():
 
     data = np.load(args.npz)
     x_hist = data["x_hist"]; u_hist = data["u_hist"]; dt = float(data["dt"]) if "dt" in data else 0.05
-    plot_all(x_hist, u_hist, dt, save_prefix=args.save_prefix, show=(not args.no_show))
+    plot_states(x_hist, u_hist, dt, save_prefix=args.save_prefix, show=(not args.no_show))
 
 
 if __name__ == "__main__":

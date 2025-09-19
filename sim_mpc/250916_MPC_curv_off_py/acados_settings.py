@@ -54,9 +54,6 @@ def acados_settings(
     model_ac = AcadosModel()
     model_ac.f_expl_expr = model.f_expl_expr
     # define constraint：[longitudinal force, lateral force, inner_bound, outer_bound]
-    model_ac.con_h_expr_0 = constraint.expr
-    model_ac.con_h_expr = constraint.expr
-    model_ac.con_h_expr_e = constraint.expr_e
     model_ac.x = model.x
     model_ac.u = model.u
     model_ac.z = model.z
@@ -74,7 +71,17 @@ def acados_settings(
     nu = model.n_u
     ny = nx + nu
     ny_e = nx
+    
+    #State and input constraint
+    input_constraint = False
+    vx_max_constraint = False
+    
+    # Nonlinear constraint
+    boundaries_constraint = True # if use boundary constraint for nonlinear constraint
+    alat_constraint = False # if use throttle and delta constraint for state constraint
+    soft = False # if use soft constraint for nonlinear constraint
 
+    
     # define the number of soft constraints
     nsbx = 0  # state soft constraint
     nsbu = 0
@@ -101,51 +108,71 @@ def acados_settings(
     # minmum  slack variables: sl
     # maximum slack varibales: su
 
-    # Slack penalty function is Z_l*s_l**2 + Z_u*s_u**2
-    # at stage 0
-    ocp.cost.Zl_0 = stmpc_config.Zl * np.ones((nsh,))
-    ocp.cost.Zu_0 = stmpc_config.Zu * np.ones((nsh,))
-    # must have in the cost function, but not used (quadratic cost is enough to handle the constraints)
-    ocp.cost.zl_0 = stmpc_config.zl * np.ones((nsh,))
-    ocp.cost.zu_0 = stmpc_config.zu * np.ones((nsh,))
-    # from 1 to N-1
-    ocp.cost.Zl = stmpc_config.Zl * np.ones((ns,))
-    ocp.cost.Zu = stmpc_config.Zu * np.ones((ns,))
-    ocp.cost.zl = stmpc_config.zl * np.ones((ns,))
-    ocp.cost.zu = stmpc_config.zu * np.ones((ns,))
-    # at stage N
-    ocp.cost.Zl_e = stmpc_config.Zl * np.ones((nsh_e,))
-    ocp.cost.Zu_e = stmpc_config.Zu * np.ones((nsh_e,))
-    ocp.cost.zl_e = stmpc_config.zl * np.ones((nsh_e,))
-    ocp.cost.zu_e = stmpc_config.zu * np.ones((nsh_e,))
+
+    if soft:
+        # Slack penalty function is Z_l*s_l**2 + Z_u*s_u**2
+        # at stage 0
+        ocp.cost.Zl_0 = stmpc_config.Zl * np.ones((constraint.expr.shape[0],))
+        ocp.cost.Zu_0 = stmpc_config.Zu * np.ones((constraint.expr.shape[0],))
+        # must have in the cost function, but not used (quadratic cost is enough to handle the constraints)
+        ocp.cost.zl_0 = stmpc_config.zl * np.ones((constraint.expr.shape[0],))
+        ocp.cost.zu_0 = stmpc_config.zu * np.ones((constraint.expr.shape[0],))
+        # from 1 to N-1
+        ocp.cost.Zl = stmpc_config.Zl * np.ones((constraint.expr.shape[0],))
+        ocp.cost.Zu = stmpc_config.Zu * np.ones((constraint.expr.shape[0],))
+        ocp.cost.zl = stmpc_config.zl * np.ones((constraint.expr.shape[0],))
+        ocp.cost.zu = stmpc_config.zu * np.ones((constraint.expr.shape[0],))
+        # at stage N
+        ocp.cost.Zl_e = stmpc_config.Zl * np.ones((constraint.expr_e.shape[0],))
+        ocp.cost.Zu_e = stmpc_config.Zu * np.ones((constraint.expr_e.shape[0],))
+        ocp.cost.zl_e = stmpc_config.zl * np.ones((constraint.expr_e.shape[0],))
+        ocp.cost.zu_e = stmpc_config.zu * np.ones((constraint.expr_e.shape[0],))
 
     # input constraint
-    ocp.constraints.lbu_0 = np.array([constraint.dthrottle_min, constraint.ddelta_min])
-    ocp.constraints.ubu_0 = np.array([constraint.dthrottle_max, constraint.ddelta_max])
-    ocp.constraints.idxbu_0 = np.array([0, 1])
+    if input_constraint:
+        ocp.constraints.lbu_0 = np.array([constraint.ddelta_min ,constraint.dthrottle_min])
+        ocp.constraints.ubu_0 = np.array([constraint.ddelta_max, constraint.dthrottle_max])
+        ocp.constraints.idxbu_0 = np.array([0, 1])
 
-    ocp.constraints.lbu_e = np.array([constraint.dthrottle_min, constraint.ddelta_min])
-    ocp.constraints.ubu_e = np.array([constraint.dthrottle_max, constraint.ddelta_max])
-    ocp.constraints.idxbu_e = np.array([0, 1])
+        ocp.constraints.lbu_e = np.array([constraint.ddelta_min ,constraint.dthrottle_min])
+        ocp.constraints.ubu_e = np.array([constraint.ddelta_max ,constraint.dthrottle_max])
+        ocp.constraints.idxbu_e = np.array([0, 1])
 
-    ocp.constraints.lbu = np.array([constraint.dthrottle_min, constraint.ddelta_min])
-    ocp.constraints.ubu = np.array([constraint.dthrottle_max, constraint.ddelta_max])
-    ocp.constraints.idxbu = np.array([0, 1])
+        ocp.constraints.lbu = np.array([constraint.ddelta_min ,constraint.dthrottle_min])
+        ocp.constraints.ubu = np.array([constraint.ddelta_max, constraint.dthrottle_max])
+        ocp.constraints.idxbu = np.array([0, 1])
 
     # state constraint
-    state_constraint_min = np.array(
-        [constraint.v_x_min, constraint.delta_min, constraint.throttle_min]
-    )
-    state_constraint_max = np.array(
-        [constraint.v_x_max, constraint.delta_max, constraint.throttle_max]
-    )
-    state_constraint_index = np.array(
-        [
-            StateIndex.VELOCITY_V_X.value,
-            StateIndex.STEERING_ANGLE_DELTA.value,
-            StateIndex.ACCEL.value,
-        ]
-    )
+    
+    if vx_max_constraint == True:
+        # with acceleration constraint
+        state_constraint_min = np.array(
+            [constraint.v_x_min, constraint.delta_min, constraint.throttle_min]
+        )
+        state_constraint_max = np.array(
+            [constraint.v_x_max, constraint.delta_max, constraint.throttle_max]
+        )
+        state_constraint_index = np.array(
+            [
+                StateIndex.VELOCITY_V_X.value,
+                StateIndex.DELTA.value,
+                StateIndex.THROTTLE.value,
+            ]
+        )
+    else:
+        # Remove acceleration constraint
+        state_constraint_min = np.array(
+            [constraint.delta_min, constraint.throttle_min]
+        )
+        state_constraint_max = np.array(
+            [constraint.delta_max, constraint.throttle_max]
+        )
+        state_constraint_index = np.array(
+            [
+                StateIndex.DELTA.value,
+                StateIndex.THROTTLE.value,
+            ]
+        )
 
     ocp.constraints.lbx_0 = state_constraint_min
     ocp.constraints.ubx_0 = state_constraint_max
@@ -168,51 +195,75 @@ def acados_settings(
     # ocp.constraints.usbx_e = np.array([0.1])
     # ocp.constraints.idxsbx_e = np.array([3])
 
-    # Nonlinear constraint: longitudinal force; Lateral force; inner_bound; outer_bound
+    # Nonlinear constraint: right and left boundary and lateral acceleration
     # Nonlinear constraint
     Nonlinear_constraint_min = np.array([0, -model.track_max, 0])
     Nonlinear_constraint_max = np.array([model.track_max, 0, 1])
     # Nonlinear_soft_min_value = np.zeros(nsh)
     # Nonlinear_soft_max_value = np.zeros(nsh) + np.array([0.1, 0.1, 0])
     Nonlinear_constraint_index = np.array([num for num in range(nsh)])
+    #Nonlinear_constraint_index = [] # do not use soft constraint for now
+    
+    n_constrain = 0
+    n_constrain_e = 0
+    
+    if boundaries_constraint:
+        n_constrain += 2
+        n_constrain_e += 2
+
+    if alat_constraint:
+        n_constrain += 1
+        
+        
+    if soft:
+        ocp.constraints.idxsh_0 = Nonlinear_constraint_index[:n_constrain]
+        ocp.constraints.idxsh = Nonlinear_constraint_index[:n_constrain]
+        ocp.constraints.idxsh_e = Nonlinear_constraint_index[:n_constrain_e]
+
+   
 
     # at stage 0
-    ocp.constraints.lh_0 = Nonlinear_constraint_min[:nsh_e]
-    ocp.constraints.uh_0 = Nonlinear_constraint_max[:nsh_e]
+    ocp.constraints.lh_0 = Nonlinear_constraint_min[:n_constrain]
+    ocp.constraints.uh_0 = Nonlinear_constraint_max[:n_constrain]
     # ocp.constraints.lsh_0 = Nonlinear_soft_min_value
     # ocp.constraints.ush_0 = Nonlinear_soft_max_value
-    ocp.constraints.idxsh_0 = Nonlinear_constraint_index[:nsh_e]
 
     # from stage 1 to N-1
-    ocp.constraints.lh = Nonlinear_constraint_min[:nsh_e]
-    ocp.constraints.uh = Nonlinear_constraint_max[:nsh_e]
+    ocp.constraints.lh = Nonlinear_constraint_min[:n_constrain]
+    ocp.constraints.uh = Nonlinear_constraint_max[:n_constrain]
     # ocp.constraints.lsh = Nonlinear_soft_min_value
     # ocp.constraints.ush = Nonlinear_soft_max_value
-    ocp.constraints.idxsh = Nonlinear_constraint_index[:nsh_e]
 
     # at stage N
-    ocp.constraints.lh_e = Nonlinear_constraint_min[:nsh_e]
-    ocp.constraints.uh_e = Nonlinear_constraint_max[:nsh_e]
+    ocp.constraints.lh_e = Nonlinear_constraint_min[:n_constrain_e]
+    ocp.constraints.uh_e = Nonlinear_constraint_max[:n_constrain_e]
     # ocp.constraints.lsh_e = Nonlinear_soft_min_value
     # ocp.constraints.ush_e = Nonlinear_soft_max_value
-    ocp.constraints.idxsh_e = Nonlinear_constraint_index[:nsh_e]
+
+    ocp.model.con_h_expr_0 = constraint.expr[:n_constrain]
+    ocp.model.con_h_expr = constraint.expr[:n_constrain]
+    ocp.model.con_h_expr_e = constraint.expr_e[:n_constrain_e]
 
     # set to make intial condition necessary (otherwise lbx_0 owerwrites this)
     ocp.constraints.x0 = model.x0
 
     # set QP solver and integration
     ocp.solver_options.tf = stmpc_config.N / stmpc_config.MPC_freq
+    #ocp.solver_options.qp_solver = "FULL_CONDENSING_HPIPM"
     ocp.solver_options.qp_solver = "PARTIAL_CONDENSING_HPIPM"
     ocp.solver_options.nlp_solver_type = "SQP_RTI"
     ocp.solver_options.hessian_approx = "EXACT"  # NOTE: do not believe the acados warning, setting hessian approximation to "EXACT" makes the solver fail
+    #ocp.solver_options.hessian_approx = "GAUSS_NEWTON"
     ocp.solver_options.integrator_type = "ERK"
     ocp.solver_options.sim_method_num_stages = 4
     ocp.solver_options.sim_method_num_steps = 3
-    ocp.solver_options.tol = 1e-2
+    ocp.solver_options.tol = 1e-3
     ocp.solver_options.print_level = 0
+    
+    json_file = "./sim_mpc/250916_MPC_curv_off_py/acados_ocp.json"
 
     # create solver
-    acados_solver = AcadosOcpSolver(ocp, json_file="acados_ocp.json")
+    acados_solver = AcadosOcpSolver(ocp, json_file=json_file)
 
     return constraint, model, acados_solver, params
 

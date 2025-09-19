@@ -32,13 +32,16 @@ import sys
 import time
 import numpy as np
 import matplotlib.pyplot as plt
+import casadi as cs
+from utils.indicies import StateIndex
+
 
 # ---- dependências do teu projeto (já existentes) ----
 from acados_settings import acados_settings, get_parameters
 from load_params import load_params_file, load_track_csv, make_configs
 from aux_func import frenet_to_global
 from mpc_plots import (
-    plot_all,  # pós-sim
+    plot_states,  # pós-sim
     plot_track_and_boundaries,  # figura estática extra (opcional)
     init_sim_plot,
     update_sim_plot,  # animação/refresh
@@ -53,6 +56,7 @@ class SimResult:
     solve_ms: np.ndarray
     dt: float
     freq: float
+    mpc_self: MPCSim
 
 
 class MPCSim:
@@ -68,6 +72,7 @@ class MPCSim:
         cfg_overrides: list[dict] | None = None,
         track_width_override: float | None = None,
         no_plot: bool = False,
+        x_init: np.ndarray = None,
     ) -> None:
         self.no_plot = no_plot
 
@@ -100,8 +105,17 @@ class MPCSim:
             self.solver.set(stage, "p", self.p_vec)
 
         # 5) Estado inicial (ajusta conforme o teu modelo)
-        # Exemplo: [s, n, mu, vx, vy, r, delta, throttle] 27
-        self.x = np.array([17.1, 0.01, 0.01, 0.1, 0., 0., 0., 0.], dtype=float)
+        self.x = x_init
+        
+        self.Fz_f = []
+        self.Fz_r = []
+        self.Fx_f = []
+        self.Fx_r = []
+        self.Fy_f = []
+        self.Fy_r = []
+        
+        self.alpha_f = []
+        self.alpha_r = []
 
         # warm start inicial com estado atual em Frenet (usa (s, n, mu) da self.x)
         self.apply_warm_start(self.x[:3])
@@ -289,7 +303,9 @@ class MPCSim:
                 xN = [self.x, x_next]
                 uN = [self.u_prev, u_cmd]
             else:
-                print(f"\033[92m[INFO] Passo {k} resolvido em {ms:.1f} ms (status {status})\033[0m")
+                print(
+                    f"\033[92m[INFO] Passo {k} resolvido em {ms:.1f} ms (status {status})\033[0m"
+                )
                 u_applied = uN[0]
                 x_next = xN[1].astype(float)
 
@@ -310,14 +326,56 @@ class MPCSim:
                 f"Actual state: {np.round(self.x, 2)} (s, n, mu, vx, vy, delta, r, a) "
             )
             print(f"   Applied u: {np.round(u_applied, 2)} (derAcc , derDelta) ")
+            Fx_f, Fx_r, Fy_f, Fy_r, Fz_f, Fz_r = self.model.forces_func(
+                self.x[0],
+                self.x[1],
+                self.x[2],
+                self.x[3],
+                self.x[4],
+                self.x[5],
+                self.x[6],
+                self.x[7],
+                float(u_applied[0]),
+                float(u_applied[1]),
+                self.p_vec,
+            )
+            Fx_f = Fx_f.full().ravel()[0]
+            Fx_r = Fx_r.full().ravel()[0]
+            Fy_f = Fy_f.full().ravel()[0]
+            Fy_r = Fy_r.full().ravel()[0]
+            Fz_f = Fz_f.full().ravel()[0]
+            Fz_r = Fz_r.full().ravel()[0]
+            print(
+                f"   Forces: Fx_f={Fx_f:.2f}, Fx_r={Fx_r:.2f}, Fy_f={Fy_f:.2f}, Fy_r={Fy_r:.2f}, Fz_f={Fz_f:.2f}, Fz_r={Fz_r:.2f}"
+            )
+            
+            self.Fz_f.append(Fz_f)
+            self.Fz_r.append(Fz_r)
+            self.Fx_f.append(Fx_f)
+            self.Fx_r.append(Fx_r)
+            self.Fy_f.append(Fy_f)
+            self.Fy_r.append(Fy_r)
+            
+            alpha_f, alpha_r = self.model.alpha_func(
+                self.x[StateIndex.VELOCITY_V_X], self.x[StateIndex.VELOCITY_V_Y], self.x[StateIndex.YAW_RATE], self.x[StateIndex.DELTA]
+            )
+            self.alpha_f.append(float(alpha_f.full().ravel()[0]))
+            self.alpha_r.append(float(alpha_r.full().ravel()[0]))
+
             print(
                 f"  Next state: {np.round(x_next, 2)} (s, n, mu, vx, vy, delta, r, a) "
             )
 
             if status != 0:
-                wait = input("Press Enter to continue...")
-        
-                
+                wait = input("Press Enter to continue or esc to exit...")
+                if wait.lower() in ["esc", "exit", "quit", "q"]:
+                    sys.exit(1)
+                elif wait.lower() in ["p", "space"]:
+                    print("Exiting sim loop.")
+                    break
+                else:
+                    print("Continuing sim loop.")
+
             # plot em tempo-real (não bloqueante) – mantém a tua API
             if not self.no_plot and self.fig is not None:
                 self.fig = update_sim_plot(
@@ -337,6 +395,7 @@ class MPCSim:
             solve_ms=solve_ms,
             dt=self.dt,
             freq=float(self.stmpc.MPC_freq),
+            mpc_self=self
         )
 
 
@@ -344,8 +403,12 @@ class MPCSim:
 
 
 def main():
-    #traj_default = "./traj/centerline_test_map.csv"
-    traj_default = Path("./traj/track_data.csv")
+
+    traj_default = "./traj/centerline_test_map_v2.csv"
+    # traj_default = Path("./traj/track_data.csv")
+
+    # Exemplo: [s, n, mu, vx, vy, r, delta, throttle] 27
+    x_init = np.array([60, 0.1, 0.1, 0.1, 0.1, 0.1, 0.01, 0.01], dtype=float)
 
     ap = argparse.ArgumentParser(
         description="Closed-loop MPC sim (acados) — class-based"
@@ -398,6 +461,7 @@ def main():
         cfg_overrides=overrides,
         track_width_override=args.track_width,
         no_plot=args.no_plot,
+        x_init=x_init,
     )
 
     res = sim.run(sim_time=args.sim_time)
@@ -406,17 +470,12 @@ def main():
         f"Done. Steps: {res.u_hist.shape[0]}, avg solve time: {res.solve_ms.mean():.2f} ms at {res.freq:.1f} Hz"
     )
 
-    if not args.no_plot:
-        try:
-            # pós-sim (figuras bloqueantes, só no fim)
-            from mpc_plots import plot_xy_from_csv
-
-            plot_xy_from_csv(
-                res.x_hist, args.csv, track_width=args.track_width, show=True
-            )
-            plot_all(res.x_hist, res.u_hist, res.dt, save_prefix=None, show=True)
-        except Exception as e:
-            print("plotting failed:", e)
+    try:
+        # pós-sim (figuras bloqueantes, só no fim)
+        print("Plotting states & inputs...")
+        plot_states(res.mpc_self, res.x_hist, res.u_hist, res.dt, save_prefix=None, show=True)
+    except Exception as e:
+        print("plotting failed:", e)
 
 
 if __name__ == "__main__":

@@ -6,13 +6,13 @@ class StateIndex(IntEnum):
     ORIENTATION_THETA = 2
     VELOCITY_V_X = 3
     VELOCITY_V_Y = 4
-    STEERING_ANGLE_DELTA = 5
-    YAW_RATE = 6
-    ACCEL = 7
+    YAW_RATE = 5
+    DELTA = 6
+    THROTTLE = 7
 
 class Input(IntEnum):
-    JERK = 0
-    D_STEERING_ANGLE = 1
+    D_DELTA = 0
+    D_THROTTLE = 1
 
 
 class Parameter(IntEnum):

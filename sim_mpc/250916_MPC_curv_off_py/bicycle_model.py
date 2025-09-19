@@ -38,6 +38,7 @@ import types
 import casadi as cs
 import numpy as np
 from casadi import MX, Function, cos, fmod, interpolant, sin, vertcat, sqrt
+from torch import atan2
 
 
 def bicycle_model(
@@ -59,7 +60,7 @@ def bicycle_model(
     pathlength = s0[-1]
     # copy loop to beginning and end
 
-    s0 = np.append(s0, [s0[length - 1] + s0[1:length]])
+    """ s0 = np.append(s0, [s0[length - 1] + s0[1:length]])
     s0 = np.append([s0[: length - 1] - s0[length - 1]], s0)
     kapparef = np.append(kapparef, kapparef[1:length])
     kapparef = np.append([kapparef[: length - 1] - kapparef[length - 1]], kapparef)
@@ -67,7 +68,7 @@ def bicycle_model(
     d_left = np.append(d_left, d_left[1:length])
     d_left = np.append([d_left[: length - 1] - d_left[length - 1]], d_left)
     d_right = np.append(d_right, d_right[1:length])
-    d_right = np.append([d_right[: length - 1] - d_right[length - 1]], d_right)
+    d_right = np.append([d_right[: length - 1] - d_right[length - 1]], d_right) """
 
     # compute spline interpolations
     kapparef_s = interpolant("kapparef_s", "bspline", [s0], kapparef)
@@ -180,11 +181,15 @@ def bicycle_model(
     alpha_r = cs.atan2(-v_y - vy0 + lr * yaw_rate, v_x + vx0) """
     
     # --- 1) Regularização de baixa velocidade para slip angles
-    v0 = 0.5  # [m/s] regularização (típico 0.3–1.0)
-    v_eff = cs.sqrt(v_x*v_x + v0*v0)  # C¹, nunca zera
-
+    v0 = 0.01  # [m/s] regularização (típico 0.3–1.0)
+    
+    """ v_eff = cs.sqrt(v_x*v_x + v0*v0)  # C¹, nunca zera
     alpha_f = cs.atan2(-(v_y + lf*yaw_rate), v_eff) + delta
-    alpha_r = cs.atan2(-(v_y - lr*yaw_rate), v_eff)
+    alpha_r = cs.atan2(-(v_y - lr*yaw_rate), v_eff)  """
+    alpha_f = cs.atan2(-v_y - (lf* yaw_rate),(v_x+v0)) + delta
+    alpha_r = cs.atan2(-v_y + (lr* yaw_rate),(v_x+v0))
+
+    alpha_func = Function("alpha_func", [v_x, v_y, yaw_rate, delta], [alpha_f, alpha_r])
 
     # load transfer
     if stmpc_config.load_transfer:
@@ -208,7 +213,7 @@ def bicycle_model(
         * F_zr
         * sin(Cr * cs.atan(Br * alpha_r))
     )
-    """ F_yf = (
+    """F_yf = (
         friction_coeff
         * Df
         * F_zf
@@ -220,6 +225,12 @@ def bicycle_model(
         * F_zr
         * sin(Cr * cs.atan(Br * alpha_r - Er * (Br * alpha_r - cs.atan(Br * alpha_r))))
     ) """
+    
+    forces_func = Function(
+    "forces_func",
+    [s, n, theta, v_x, v_y, yaw_rate, delta, throttle, delta_dot, throttle_dot, p],
+    [F_xf, F_xr, F_yf, F_yr, F_zf, F_zr],  # acrescente quaisquer outras grandezas auxiliares
+)
     
     # calculate the index
     s_mod = fmod(s, pathlength)
@@ -260,7 +271,7 @@ def bicycle_model(
     model.x0 = np.zeros(n_x)
     # model.x0 = np.array([32.6, 0.1, 0.1, 0.1, 0.1, 0.0, 0.0, 0.0], dtype=float)
 
-    terminal_multiplier = 10
+    terminal_multiplier = 1
     V_target = 3
 
     """     model.cost_expr_ext_cost_0 = weight_qn * (n - overtake_d)**2 + weight_qalpha * theta**2 + weight_qv * \
@@ -307,15 +318,16 @@ def bicycle_model(
     model.cost_expr_ext_cost_0 = (
         weight_dalpha * delta_dot**2 + weight_dthrottle * throttle_dot**2
     )
-    
-    model.cost_expr_ext_cost_e = 0
+    """ model.cost_expr_ext_cost = 0
+    model.cost_expr_ext_cost_0 = 0"""
+    model.cost_expr_ext_cost_e = 0 
 
     if stmpc_config.s_maximization==1:
         model.cost_expr_ext_cost_e -= weight_ds * s_dot / freq
-        model.cost_expr_ext_cost_e -= terminal_multiplier * weight_ds * s_dot / freq 
+        #model.cost_expr_ext_cost_e -= terminal_multiplier * weight_ds * s_dot / freq 
     elif stmpc_config.s_maximization==2:
         model.cost_expr_ext_cost += weight_ds  / (freq * s_dot)
-        model.cost_expr_ext_cost_e = terminal_multiplier * weight_ds / (freq * s_dot)
+        #model.cost_expr_ext_cost_e += terminal_multiplier * weight_ds / (freq * s_dot)
         
     if stmpc_config.vx_maximization:
         model.cost_expr_ext_cost_0 -= weight_qvx * v_x
@@ -326,10 +338,17 @@ def bicycle_model(
         model.cost_expr_ext_cost_0 += weight_qvy * v_y**2
         model.cost_expr_ext_cost += weight_qvy * v_y**2
         model.cost_expr_ext_cost_e += terminal_multiplier * (weight_qvy * v_y**2)
+        
+    if stmpc_config.diff_beta_minimization:
+        beta_dyn = cs.atan2(v_y, v_x+0.01)
+        beta_kin = cs.atan(delta * lr / (lr + lf))
+        model.cost_expr_ext_cost_0 += weight_beta * (beta_dyn-beta_kin)**2
+        model.cost_expr_ext_cost += weight_beta * (beta_dyn-beta_kin)**2
+        model.cost_expr_ext_cost_e += terminal_multiplier * (weight_beta * (beta_dyn-beta_kin)**2)
 
     # constraint on lateral errors
-    n_right_bound = n + right_bound_s(s_mod) - safety_margin
-    n_left_bound = n - left_bound_s(s_mod) + safety_margin
+    n_right_bound = n + right_bound - safety_margin
+    n_left_bound = n - left_bound + safety_margin
 
     # nonlinear constraints
     """ if stmpc_config.correct_v_y_dot:
@@ -393,5 +412,7 @@ def bicycle_model(
     model.left_bound_s = left_bound_s
     model.right_bound_s = right_bound_s
     model.track_max = stmpc_config.track_max_width
+    model.forces_func = forces_func
+    model.alpha_func = alpha_func
     # model.safety_width = stmpc_config.track_safety_margin
     return model, constraint, params

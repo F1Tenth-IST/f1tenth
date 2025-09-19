@@ -8,10 +8,6 @@ from collections import deque
 import numpy as np
 import casadi as cs
 import time
-from mpc_plots import plot_all
-from mpc_plots_xy import plot_xy_from_csv
-
-
 
 # ---------------------------- simple YAML-ish parser ----------------------------
 
@@ -142,6 +138,7 @@ def make_configs(overrides: dict | None = None) -> tuple[SimpleNamespace, Simple
     stmpc.s_maximization = int(cfg["s_maximization"])
     stmpc.vx_maximization = bool(cfg.get("vx_maximization"))
     stmpc.vy_minimization = bool(cfg["vy_minimization"])
+    stmpc.diff_beta_minimization = bool(cfg.get("diff_beta_minimization"))
     
     stmpc.load_transfer = bool(cfg["load_transfer"])
     stmpc.correct_v_y_dot = bool(cfg["correct_v_y_dot"])
