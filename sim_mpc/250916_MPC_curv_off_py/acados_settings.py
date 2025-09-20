@@ -89,13 +89,14 @@ def acados_settings(
     nsh_e = constraint.expr_e.shape[0]
     ns = nsh + nsbx + nsbu
 
-    # discretization
-    ocp.solver_options.N_horizon = stmpc_config.N  # Use AcadosOcpOptions.N_horizon for future compatibility
-
     ocp.dims.nx = nx
     ocp.dims.nu = nu
     ocp.dims.ny = 0
     ocp.dims.ny_e = 0
+    if soft:
+        ocp.dims.nsh = nsh
+        ocp.dims.nsh_e = nsh_e
+        ocp.dims.ns = ns
 
     # use external costfunction defined in bicycle.py
     ocp.cost.cost_type = "EXTERNAL"
@@ -174,6 +175,7 @@ def acados_settings(
             ]
         )
 
+
     ocp.constraints.lbx_0 = state_constraint_min
     ocp.constraints.ubx_0 = state_constraint_max
     ocp.constraints.idxbx_0 = state_constraint_index
@@ -247,18 +249,33 @@ def acados_settings(
     # set to make intial condition necessary (otherwise lbx_0 owerwrites this)
     ocp.constraints.x0 = model.x0
 
+    # discretization
+    ocp.solver_options.N_horizon = stmpc_config.N  # Use AcadosOcpOptions.N_horizon for future compatibility
     # set QP solver and integration
     ocp.solver_options.tf = stmpc_config.N / stmpc_config.MPC_freq
     #ocp.solver_options.qp_solver = "FULL_CONDENSING_HPIPM"
     ocp.solver_options.qp_solver = "PARTIAL_CONDENSING_HPIPM"
     ocp.solver_options.nlp_solver_type = "SQP_RTI"
+    #ocp.solver_options.regularize_method = "MIRROR"
+    #ocp.solver_options.globalization = "MERIT_BACKTRACKING"
+    #ocp.solver_options.line_search_use_sufficient_descent = 1
+    #ocp.solver_options.globalization_alpha_min = 1e-4
+    #ocp.solver_options.alpha_reduction = 0.7
+    #ocp.solver_options.nlp_solver_max_iter = 20   # default é 10
+    #ocp.solver_options.qp_solver_iter_max = 50
     ocp.solver_options.hessian_approx = "EXACT"  # NOTE: do not believe the acados warning, setting hessian approximation to "EXACT" makes the solver fail
     #ocp.solver_options.hessian_approx = "GAUSS_NEWTON"
+    # ocp.solver_options.ext_cost_num_hess = 1            # (opcional p/ robustez)
+    #ocp.solver_options.levenberg_marquardt = 1e-2  # ~1e-6 a 1e-3
+    """ ocp.solver_options.qpscaling_scale_constraints = "INF_NORM"
+    ocp.solver_options.qpscaling_scale_objective   = "OBJECTIVE_GERSHGORIN" """
+
     ocp.solver_options.integrator_type = "ERK"
     ocp.solver_options.sim_method_num_stages = 4
     ocp.solver_options.sim_method_num_steps = 3
     ocp.solver_options.tol = 1e-3
     ocp.solver_options.print_level = 0
+    ocp.solver_options.qp_solver_warm_start = 1
     
     json_file = "./sim_mpc/250916_MPC_curv_off_py/acados_ocp.json"
 

@@ -38,7 +38,6 @@ import types
 import casadi as cs
 import numpy as np
 from casadi import MX, Function, cos, fmod, interpolant, sin, vertcat, sqrt
-from torch import atan2
 
 
 def bicycle_model(
@@ -188,12 +187,12 @@ def bicycle_model(
     # --- 1) Regularização de baixa velocidade para slip angles
     v0 = 1  # [m/s] regularização (típico 0.3–1.0)
     v_blend = cs.fmax(v0, cs.fabs(v_x))  # garante mínimo v0
-    #v_blend = cs.sqrt(v_x**2 + v0**2)
+    # v_blend = cs.sqrt(v_x**2 + v0**2)
     """v_eff = cs.sqrt(v_x * v_x + v0 * v0)  # C¹, nunca zera
     alpha_f = cs.atan2((v_y + lf * yaw_rate), v_eff) - delta
     alpha_r = cs.atan2((v_y - lr * yaw_rate), v_eff) """
-    alpha_f = cs.atan2(v_y + (lf* yaw_rate),(v_blend)) - delta
-    alpha_r = cs.atan2(v_y - (lr* yaw_rate),(v_blend))
+    alpha_f = cs.atan2(v_y + (lf * yaw_rate), (v_blend)) - delta
+    alpha_r = cs.atan2(v_y - (lr * yaw_rate), (v_blend))
 
     alpha_func = Function("alpha_func", [v_x, v_y, yaw_rate, delta], [alpha_f, alpha_r])
 
@@ -244,11 +243,14 @@ def bicycle_model(
     right_bound = right_bound_s(s_mod)
 
     # dynamics
-    s_dot = ((v_x * cos(theta)) - (v_y * sin(theta))) / (1 - kapparef * n)
+    den = 1 - kapparef * n
+    den_safe = cs.if_else(
+        cs.fabs(den) < 0.2, 0.2 * cs.sign(den), den
+    )  # 0.2 é conservador
+    s_dot = ((v_x * cos(theta)) - (v_y * sin(theta))) / den_safe
+    # s_dot = ((v_x * cos(theta)) - (v_y * sin(theta))) / (1 - kapparef * n)
     n_dot = v_x * sin(theta) + v_y * cos(theta)
-    theta_dot = yaw_rate - (
-        kapparef * (((v_x * cos(theta)) - (v_y * sin(theta))) / (1 - kapparef * n))
-    )
+    theta_dot = yaw_rate - (kapparef * s_dot)
     v_x_dot = (1 / m) * (
         F_xr + F_xf * cos(delta) - F_yf * sin(delta) + m * v_y * yaw_rate
     )
@@ -256,7 +258,7 @@ def bicycle_model(
         F_yr + F_xf * sin(delta) + F_yf * cos(delta) - m * v_x * yaw_rate
     )
     yaw_rate_dot = (1 / Iz) * ((-F_yr * lr) + (F_yf * lf) * cos(delta))
-    #yaw_rate_dot = (1 / Iz) * ((-F_yr * lr) + (F_yf * lf) * cos(delta) + F_xf * sin(delta))
+    # yaw_rate_dot = (1 / Iz) * ((-F_yr * lr) + (F_yf * lf) * cos(delta) + F_xf * sin(delta))
 
     # delta inputs for smoother control
 
@@ -274,7 +276,6 @@ def bicycle_model(
     model.x0 = np.zeros(n_x)
     # model.x0 = np.array([32.6, 0.1, 0.1, 0.1, 0.1, 0.0, 0.0, 0.0], dtype=float)
 
-   
     V_target = 3
 
     """     model.cost_expr_ext_cost_0 = weight_qn * (n - overtake_d)**2 + weight_qalpha * theta**2 + weight_qv * \
@@ -327,6 +328,10 @@ def bicycle_model(
     model.cost_expr_ext_cost_0 = 0"""
     model.cost_expr_ext_cost_e = 0
 
+    model.cost_expr_ext_cost_0 +=  5 * (v_x - V_target)**2
+    model.cost_expr_ext_cost += 5 * (v_x - V_target)**2
+    model.cost_expr_ext_cost_e += terminal_multiplier * 5 * (v_x - V_target)**2
+
     if stmpc_config.s_maximization == 1:
         model.cost_expr_ext_cost -= weight_ds * s_dot / freq
         model.cost_expr_ext_cost_e -= terminal_multiplier * weight_ds * s_dot / freq
@@ -345,7 +350,8 @@ def bicycle_model(
         model.cost_expr_ext_cost_e += terminal_multiplier * (weight_qvy * v_y**2)
 
     if stmpc_config.diff_beta_minimization:
-        beta_dyn = cs.atan2(v_y, v_x)
+        v_blend = cs.fmax(0.5, cs.fabs(v_x)) 
+        beta_dyn = cs.atan2(v_y,  v_blend)
         beta_kin = cs.atan(delta * lr / (lr + lf))
         model.cost_expr_ext_cost_0 += weight_beta * (beta_dyn - beta_kin) ** 2
         model.cost_expr_ext_cost += weight_beta * (beta_dyn - beta_kin) ** 2
@@ -353,6 +359,28 @@ def bicycle_model(
             weight_beta * (beta_dyn - beta_kin) ** 2
         )
 
+    ext_cost = (
+        10*n**2 +
+        5*theta**2 -
+        0.1*(v_x)**2 +
+        0.1*yaw_rate**2 +
+        1*delta**2 +
+        0.1*delta_dot**2 +
+        0.1*throttle_dot**2
+    )
+
+    ext_cost_e = (
+        10*n**2 +
+        5*theta**2 -
+        0.1*(v_x)**2 +
+        0.1*yaw_rate**2 +
+        1*delta**2
+    )
+
+    """ model.cost_expr_ext_cost_0 = ext_cost
+    model.cost_expr_ext_cost = ext_cost
+    model.cost_expr_ext_cost_e = ext_cost_e
+ """
     # constraint on lateral errors
     n_right_bound = n + right_bound - safety_margin
     n_left_bound = n - left_bound + safety_margin

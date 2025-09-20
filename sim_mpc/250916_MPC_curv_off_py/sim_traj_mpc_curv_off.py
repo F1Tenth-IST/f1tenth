@@ -121,7 +121,7 @@ class MPCSim:
         self.uN =[]
 
         # warm start inicial com estado atual em Frenet (usa (s, n, mu) da self.x)
-        self.apply_warm_start(self.x[:3])
+        self.apply_warm_start(self.x)
 
         # 6) Plot inicial (opcional)
         self.fig = None
@@ -151,14 +151,14 @@ class MPCSim:
         Usa o helper do teu projeto (get_warm_start) que devolve por passo [x|u] concatenado.
         """
         ws = self.get_warm_start(
-            pose_frenet=pose_frenet, const_steer_vel=0.0 , const_acc=0.0,
+            pose_frenet=pose_frenet, const_steer_vel=0.0 , const_acc=0.05,
         )
         for i in range(self.stmpc.N + 1):
             self.solver.set(i, "x", ws[i][: self.model.n_x])
             if i < self.stmpc.N:
                 self.solver.set(i, "u", ws[i][self.model.n_x :])
 
-        self.x[:3] = ws[0][:3]  # atualiza só os 3 primeiros estados
+        # self.x = ws[0][:8] # atualiza só os 3 primeiros estados
 
     def get_warm_start(
         self, pose_frenet: np.ndarray, const_acc: float, const_steer_vel: float
@@ -171,6 +171,7 @@ class MPCSim:
 
         Returns: np.array    : Warm start trajectory
         """
+        v_x_min_ws = 0.5    # [m/s] mínimo para evitar singularidades
         warm_start = np.zeros(
             (self.stmpc.N + 1, 10)
         )  # TODO: hardcoded state space dimension
@@ -179,13 +180,13 @@ class MPCSim:
                 pose_frenet[0],
                 pose_frenet[1],
                 pose_frenet[2],
-                1,
-                0,
-                0,
-                0,
-                0,
-                const_steer_vel,
+                pose_frenet[3],
+                pose_frenet[4],
+                pose_frenet[5],
+                pose_frenet[6],
                 const_acc,
+                const_steer_vel,
+                0,
             ]
         )  # TODO setting the velocity to current actual velocity might remove slowing down
         for i in range(1, self.stmpc.N + 1):
@@ -253,13 +254,13 @@ class MPCSim:
         theta = x0[2]
         v_x = x0[3]
         v_y = x0[4]
-        delta = x0[5]
-        yaw_rate = x0[6]
-        accel = x0[7]
+        yaw_rate = x0[5]
+        delta = x0[6]
+        throttle = x0[7]
         derDelta = x0[8]
-        jerk = x0[9]
+        derThrottle = x0[9]
         xdot = self.model.f_expl_func(
-            s, n, theta, v_x, v_y, delta, yaw_rate, accel, derDelta, jerk, self.p_vec
+            s, n, theta, v_x, v_y, yaw_rate, delta, throttle, derDelta, derThrottle, self.p_vec
         )
 
         xdot = [
@@ -272,7 +273,7 @@ class MPCSim:
             float(xdot[6]),
             float(xdot[7]),
             derDelta,
-            jerk,
+            derThrottle,
         ]
 
         return xdot
@@ -296,6 +297,7 @@ class MPCSim:
                 sys.stderr.write(
                     f"\033[91m[WARN] Solver falhou no passo {k} (status {status}). Integro 1 passo.\033[0m\n"
                 )
+                #self.solver.print_statistics()
                 u_cmd = self.u_prev.copy()
                 if self.delay_steps > 0:
                     self.u_buffer.append(u_cmd)
@@ -410,11 +412,11 @@ class MPCSim:
 
 def main():
 
-    # traj_default = "./traj/centerline_0.10_test_map.csv"
-    traj_default = Path("./traj/track_data.csv")
+    traj_default = "./traj/centerline_0.10_test_map_v2.csv"
+    #traj_default = Path("./traj/track_data.csv")
 
     # Exemplo: [s, n, mu, vx, vy, r, delta, throttle] 27
-    x_init = np.array([75, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01], dtype=float)
+    x_init = np.array([4, 0.01, 0.01, 0.1, 0.01, 0.01, 0.01, 0.01], dtype=float)
 
     ap = argparse.ArgumentParser(
         description="Closed-loop MPC sim (acados) — class-based"
@@ -437,7 +439,7 @@ def main():
         default=Path("./sim_mpc/250916_MPC_curv_off_py/car_model.yaml"),
         help="YAML-like car params file",
     )
-    ap.add_argument("--sim-time", type=float, default=80.0, help="Total sim time [s]")
+    ap.add_argument("--sim-time", type=float, default=40.0, help="Total sim time [s]")
     ap.add_argument(
         "--track-width",
         type=float,
