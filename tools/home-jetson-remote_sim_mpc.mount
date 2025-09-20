@@ -1,0 +1,14 @@
+[Unit]
+Description=Montar f1tenth via sshfs
+After=network-online.target
+Wants=network-online.target
+
+[Mount]
+What=desktop@192.168.27.200:/home/desktop/f1tenth/sim_mpc
+Where=/home/jetson/remote_sim_mpc
+Type=fuse.sshfs
+Options=_netdev,IdentityFile=/home/jetson/.ssh/id_rsa,allow_other,reconnect,ro
+TimeoutSec=30
+
+[Install]
+WantedBy=multi-user.target

@@ -121,12 +121,12 @@ MPCNode::MPCNode() : Node("mpc_node"),
     double safety_margin = 0.1; // 10 cm
 
     // Parameter vector
-    double p[5] = {weight_ds, weight_beta, weight_dalpha, weight_dthrottle, safety_margin};
-    int idxs[5] = {0, 1, 2, 3, 4}; // indices for the parameters
+    double p[7] = {weight_ds, weight_beta, weight_dalpha, weight_dthrottle,1.0 ,1.0, safety_margin};
+    int idxs[7] = {0, 1, 2, 3, 4, 5, 6}; // indices for the parameters
 
     for (int i = 0; i < MPC_MODEL_N; i++)
     {
-        ocp_nlp_in_set_params_sparse(nlp_config_, nlp_dims_, nlp_in_, i, idxs, p, 5);
+        ocp_nlp_in_set_params_sparse(nlp_config_, nlp_dims_, nlp_in_, i, idxs, p, 7);
     }
 
     // Set print level 0
@@ -138,10 +138,10 @@ MPCNode::MPCNode() : Node("mpc_node"),
     current_state_.n = 0.1;
     current_state_.u = 0.1;
     current_state_.vx = 0.1;
-    current_state_.vy = 0.1;
-    current_state_.r = 0.0;
-    current_state_.delta = 0.0;
-    current_state_.T = 0.0;
+    current_state_.vy = 0.01;
+    current_state_.r = 0.01;
+    current_state_.delta = 0.01;
+    current_state_.T = 0.01;
 
     // Set up a timer to solve MPC at a fixed frequency
     timer_ = this->create_wall_timer(
@@ -218,20 +218,20 @@ void MPCNode::solveMPC()
     d_print_exp_tran_mat( 2, MPC_MODEL_N, utraj.data(), 2 ); */
 
     // Get control output
-    std::array<double, 2> control_output;
+    std::array<double, 8> state_output;
     double solved_time;
 
     if (status != 0)
     {
         RCLCPP_ERROR(this->get_logger(), "ACADOS solver failed with status %d", status);
         solved_time = -1.0;
-        control_output = {current_state_.delta, current_state_.T}; // Maintain current control if solver fails
+        state_output = {current_state_.delta, current_state_.T}; // Maintain current control if solver fails
     }
     else
     {
         RCLCPP_INFO(this->get_logger(), "ACADOS solver succeeded with status %d", status);
 
-        ocp_nlp_out_get(nlp_config_, nlp_dims_, nlp_out_, 0, "u", control_output.data()); // Retrieve control output
+        ocp_nlp_out_get(nlp_config_, nlp_dims_, nlp_out_, 1, "x", state_output.data()); // Retrieve control output
 
         ocp_nlp_get(nlp_solver_, "time_tot", &solved_time);
     }
@@ -245,19 +245,19 @@ void MPCNode::solveMPC()
     ackermann_msgs::msg::AckermannDriveStamped control_vesc_msg;
     control_vesc_msg.header.stamp = this->get_clock()->now();
     control_vesc_msg.header.frame_id = "base_link";
-    control_vesc_msg.drive.steering_angle = control_output[0] * steering_angle_to_servo_gain;
-    control_vesc_msg.drive.acceleration = control_output[1];
+    control_vesc_msg.drive.steering_angle = state_output[6] * steering_angle_to_servo_gain;
+    control_vesc_msg.drive.acceleration = state_output[7];
 
     // Publish control output
     control_vesc_pub_->publish(control_vesc_msg);
 
     // Publish control array
     std_msgs::msg::Float64MultiArray control_array_msg;
-    control_array_msg.data = {control_output[0], control_output[1]};
+    control_array_msg.data = {state_output[6], state_output[7]};
     control_pub_->publish(control_array_msg);
 
     // Publish control vector
-    /* std::vector<double> predict_vector_u0(MPC_MODEL_N), predict_vector_u1(MPC_MODEL_N);
+    /*std::vector<double> predict_vector_u0(MPC_MODEL_N), predict_vector_u1(MPC_MODEL_N);
     for (int ii = 0; ii < MPC_MODEL_N; ii++)
     {
         std::array<double, 2> control_vector;
@@ -273,7 +273,7 @@ void MPCNode::solveMPC()
 
     // Publish state vector
     // Create a vector of 8 vectors, each with MPC_MODEL_N+1 elements
-   /*  std::vector<std::vector<double>> predict_vector_x(8, std::vector<double>(MPC_MODEL_N + 1));
+    std::vector<std::vector<double>> predict_vector_x(8, std::vector<double>(MPC_MODEL_N + 1));
     for (int ii = 0; ii <= MPC_MODEL_N; ii++)
     {
         std::array<double, 8> state_vector;
@@ -290,7 +290,7 @@ void MPCNode::solveMPC()
     {
         state_vector_msgs[i].data = predict_vector_x[i];
         state_vector_pub_[i]->publish(state_vector_msgs[i]);
-    } */
+    } 
 
     /*  // Publish simulation trajectory
      nav_msgs::msg::Path simulation_path;

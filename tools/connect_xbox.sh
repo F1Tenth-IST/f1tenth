@@ -9,7 +9,14 @@ expect "#"
 send "remove $MAC\r"
 expect "#"
 
-sleep 2
+sleep 1
+
+send "power off\r"
+expect "#"
+sleep 1
+send "power on\r"
+expect "#"
+sleep 1
 
 send "scan on\r"
 set found 0
@@ -40,6 +47,13 @@ send "connect $MAC\r"
 expect {
     "Connection successful" { puts "✅ Ligado com sucesso" }
     timeout { puts "❌ Timeout ao ligar"; exit 1 }
+}
+
+send "pair $MAC\r"
+expect {
+    "Pairing successful" { puts "✅ Emparelhado com sucesso" }
+    "Already paired" { puts "✅ Já emparelhado" }
+    timeout { puts "❌ Timeout ao emparelhar"; exit 1 }
 }
 
 send "exit\r"

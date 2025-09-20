@@ -8,7 +8,7 @@ mpc:
     #pose_topic: "/pose"  # Pose topic, leave empty "" if not using pose
     pose_topic: "/tracked_pose"  # Pose topic, leave empty "" if not using pose
 
-    traj_file: "traj/centerline_v2_map_2025-09-09_10-52-29.csv" # Trajectory file
+    traj_file: "traj/centerline_map_2025-09-20_18-59-45.csv" # Trajectory file
     #traj_file: "traj/pts/oito_n1000_a2.5_b1.8_v1.0.csv" # Trajectory file
 
     cost_wheights:
