@@ -26,29 +26,8 @@ from PyQt5.QtCore import Qt   # <-- importa aqui
 
 matplotlib.use("Qt5Agg")
 matplotlib.rcParams['figure.raise_window'] = False
-
 import matplotlib.pyplot as plt
-
-from aux_func import frenet_to_global
-
-def handler(sig, frame):
-    plt.close("all")
-    print("\nInterrompido com Ctrl+C")
-    sys.exit(0)
-
-def wait_for_enter_or_ctrl_c():
-    print("Pressione Enter para continuar ou Ctrl+C para sair...")
-    while True:
-        try:
-            # espera 0.1s para ver se há algo no stdin
-            r, _, _ = select.select([sys.stdin], [], [], 0.1)
-            if r:  # se algo foi digitado
-                line = sys.stdin.readline()
-                if line.strip() == "":  # Enter
-                    break
-        except KeyboardInterrupt:
-            print("\nInterrompido com Ctrl+C")
-            raise
+from aux_func import frenet_to_global, handler
 
 def position_window(fig, offset_x=100, offset_y=100):
 
@@ -147,7 +126,7 @@ def init_sim_plot(tr, d_left, d_right, x0):
     
     return fig
     
-def update_sim_plot(fig, tr, d_left, d_right, x_horizon, status):
+def update_sim_plot(fig, tr, d_left, d_right, x_horizon, status, n_step):
     
     """ if not plt.fignum_exists(fig.number):
         print("Figure closed. Exiting...")
@@ -175,6 +154,7 @@ def update_sim_plot(fig, tr, d_left, d_right, x_horizon, status):
     light_color = "green" if status == 0 else "red"
     ax.scatter([], [], color=light_color, label="MPC Status", s=200, edgecolors='black', zorder=4)
 
+    ax.set_title(f"Track with Boundaries and Vehicle Position (Step {n_step})")
     ax.axis("equal")
     ax.legend()
     ax.grid()

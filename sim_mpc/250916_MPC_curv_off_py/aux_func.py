@@ -33,3 +33,8 @@ def frenet_to_global(s_vals: np.ndarray, n_vals: np.ndarray, u_rel: np.ndarray, 
     Y = Y_c + n_vals * np.sin(psi_c + np.pi/2.0)
     psi = psi_c + u_rel
     return X, Y, psi
+
+def handler(sig, frame):
+    plt.close("all")
+    print("\nInterrompido com Ctrl+C")
+    sys.exit(0)

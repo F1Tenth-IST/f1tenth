@@ -7,9 +7,9 @@ import matplotlib.pyplot as plt
 
 if len(sys.argv) != 2:
     print("Usage: python plot.py <path_to_csv>")
-    sys.exit(1)
-
-csv_path = sys.argv[1]
+    csv_path = "traj/centerline_test_map.csv"
+else:
+    csv_path = sys.argv[1]
 
 # Load the data
 data = pd.read_csv(csv_path, header=None)
@@ -71,11 +71,11 @@ for i in range(len(x)):
 import matplotlib.image as mpimg
 
 # Load the .pgm map
-map_path = "../maps/test_map/map_output.pgm"  # Update with your actual path
+map_path = "maps/test_map/map_output.pgm"  # Update with your actual path
 map_image = mpimg.imread(map_path)
 
 # Load the .yaml file to get map metadata
-yaml_path = "../maps/test_map/map_output.yaml"  # Update with your actual path
+yaml_path = "maps/test_map/map_output.yaml"  # Update with your actual path
 with open(yaml_path, 'r') as yaml_file:
     map_metadata = yaml.safe_load(yaml_file)
 

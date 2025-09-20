@@ -73,13 +73,13 @@ def acados_settings(
     ny_e = nx
     
     #State and input constraint
-    input_constraint = False
-    vx_max_constraint = False
+    input_constraint = True
+    vx_max_constraint = True
     
     # Nonlinear constraint
     boundaries_constraint = True # if use boundary constraint for nonlinear constraint
     alat_constraint = False # if use throttle and delta constraint for state constraint
-    soft = False # if use soft constraint for nonlinear constraint
+    soft = True # if use soft constraint for nonlinear constraint
 
     
     # define the number of soft constraints

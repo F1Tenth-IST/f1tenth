@@ -19,9 +19,9 @@ track_max_width: !!float 100 #100 [m]
 #qn: 40 #40 # 4 for vy minimization
 #qalpha: 0.1 #50 # NOTE: actually make the problem quite unstable! # 100 for vy minimization
 #qv: !!float 10 #2e-2 #2e-1 velocity cost (linear, for velocity maximization)
-qs: !!float 10 #10 progress maximization
-qbeta: !!float 0.1 #1e-1 smooth side slip angle
-qdthrottle: !!float 1e-1 #1e-1 smooth throttle rate
+qs: !!float 7 #10 progress maximization
+qbeta: !!float 0.5 #1e-1 smooth side slip angle
+qdthrottle: !!float 10 #1e-1 smooth throttle rate
 qddelta: !!float 1e-1 #5e-1 smooth steering rate
 qvx: !!float 1e-2 #1e-2 velocity maximization
 qvy: !!float 100 #100 lateral velocity minimization
@@ -40,16 +40,16 @@ delta_min: !!float -0.4  #-0.4 minimum steering angle [rad]
 delta_max: !!float 0.4 #0.4 maximum steering angle [rad]
 v_min: !!float 0.0 # minimum velocity [m/s]
 v_max: !!float 12 #3 maximum velocity [m/s]$
-throttle_min: !!float -0.3 #-6  #-12 minimum velocity change rate
-throttle_max: !!float 0.3 #7 maximum velocity change rate
+throttle_min: !!float -0.2 #-6  #-12 minimum velocity change rate
+throttle_max: !!float 0.2 #7 maximum velocity change rate
 
 
 
 # input bounds
 ddelta_min: !!float -3.2 #-5 minimum change rate of stering angle [rad/s]
 ddelta_max: !!float 3.2  #5 maximum change rate of steering angle [rad/s]
-dthrottle_min: !!float -1.0
-dthrottle_max: !!float 1.0
+dthrottle_min: !!float -2
+dthrottle_max: !!float 2
 
 # nonlinear constraint
 # numbers are too high because the approximation severely underestimates the actual values
@@ -61,7 +61,7 @@ alat_max: !!float 10  #12 maximum lateral force [m/s^1] 5
 s_maximization: 1 # If true, the cost function will maximize the progress along the track
 vx_maximization: false # If true, the cost function will maximize the longitudinal velocity
 vy_minimization: false # If true, the cost function will minimize the lateral velocity
-diff_beta_minimization: false # If true, the cost function will minimize the side slip angle
+diff_beta_minimization: true # If true, the cost function will minimize the side slip angle
 
 #####################
 # constraints flags #

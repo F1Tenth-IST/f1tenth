@@ -28,13 +28,13 @@ from pathlib import Path
 from collections import deque
 from dataclasses import dataclass
 import argparse
-import sys
+import signal, sys
 import time
 import numpy as np
 import matplotlib.pyplot as plt
 import casadi as cs
 from utils.indicies import StateIndex
-
+from aux_func import handler
 
 # ---- dependências do teu projeto (já existentes) ----
 from acados_settings import acados_settings, get_parameters
@@ -117,6 +117,9 @@ class MPCSim:
         self.alpha_f = []
         self.alpha_r = []
 
+        self.xN =[]
+        self.uN =[]
+
         # warm start inicial com estado atual em Frenet (usa (s, n, mu) da self.x)
         self.apply_warm_start(self.x[:3])
 
@@ -148,7 +151,7 @@ class MPCSim:
         Usa o helper do teu projeto (get_warm_start) que devolve por passo [x|u] concatenado.
         """
         ws = self.get_warm_start(
-            pose_frenet=pose_frenet, const_acc=1.0, const_steer_vel=0.0
+            pose_frenet=pose_frenet, const_steer_vel=0.0 , const_acc=0.0,
         )
         for i in range(self.stmpc.N + 1):
             self.solver.set(i, "x", ws[i][: self.model.n_x])
@@ -180,9 +183,9 @@ class MPCSim:
                 0,
                 0,
                 0,
-                const_acc,
                 0,
                 const_steer_vel,
+                const_acc,
             ]
         )  # TODO setting the velocity to current actual velocity might remove slowing down
         for i in range(1, self.stmpc.N + 1):
@@ -323,7 +326,7 @@ class MPCSim:
                     x_next = self._integrate_one_step(self.x, u_applied) """
 
             print(
-                f"Actual state: {np.round(self.x, 2)} (s, n, mu, vx, vy, delta, r, a) "
+                f"Actual state: {np.round(self.x, 2).tolist()} (s, n, mu, vx, vy, delta, r, a) "
             )
             print(f"   Applied u: {np.round(u_applied, 2)} (derAcc , derDelta) ")
             Fx_f, Fx_r, Fy_f, Fy_r, Fz_f, Fz_r = self.model.forces_func(
@@ -363,10 +366,11 @@ class MPCSim:
             self.alpha_r.append(float(alpha_r.full().ravel()[0]))
 
             print(
-                f"  Next state: {np.round(x_next, 2)} (s, n, mu, vx, vy, delta, r, a) "
+                f"  Next state: {np.round(x_next, 2).tolist()} (s, n, mu, vx, vy, delta, r, a) "
             )
 
             if status != 0:
+                signal.signal(signal.SIGINT, handler)  # agora Ctrl+C chama handler
                 wait = input("Press Enter to continue or esc to exit...")
                 if wait.lower() in ["esc", "exit", "quit", "q"]:
                     sys.exit(1)
@@ -379,12 +383,14 @@ class MPCSim:
             # plot em tempo-real (não bloqueante) – mantém a tua API
             if not self.no_plot and self.fig is not None:
                 self.fig = update_sim_plot(
-                    self.fig, self.tr, self.d_left, self.d_right, np.array(xN), status
+                    self.fig, self.tr, self.d_left, self.d_right, np.array(xN), status, k
                 )
 
             # logging e avanço
             x_hist.append(x_next)
             u_hist.append(u_applied)
+            self.xN.append(xN)
+            self.uN.append(uN)
             self.u_prev = u_applied
             self.x = x_next
 
@@ -404,11 +410,11 @@ class MPCSim:
 
 def main():
 
-    traj_default = "./traj/centerline_test_map_v2.csv"
-    # traj_default = Path("./traj/track_data.csv")
+    # traj_default = "./traj/centerline_0.10_test_map.csv"
+    traj_default = Path("./traj/track_data.csv")
 
     # Exemplo: [s, n, mu, vx, vy, r, delta, throttle] 27
-    x_init = np.array([60, 0.1, 0.1, 0.1, 0.1, 0.1, 0.01, 0.01], dtype=float)
+    x_init = np.array([75, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01], dtype=float)
 
     ap = argparse.ArgumentParser(
         description="Closed-loop MPC sim (acados) — class-based"
