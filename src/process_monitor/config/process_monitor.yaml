@@ -1,0 +1,6 @@
+process_monitor:
+  ros__parameters:
+    publish_topic: system/processes
+    update_period: 0.5
+    max_processes: 50
+    include_all_users: true

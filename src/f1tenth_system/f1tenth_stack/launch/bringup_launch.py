@@ -207,16 +207,19 @@ def generate_launch_description():
         package='tf2_ros',
         executable='static_transform_publisher',
         name='static_baselink_to_vesc',
-        arguments=['0.0', '-0.01','0.0','-1.5708','0.0', '3.141', 'base_link', 'xsens']
+        #arguments=['0.0', '-0.01','0.0','-1.5708','0.0', '3.141', 'base_link', 'xsens']
+        #arguments=['0.0', '-0.01','0.0', '-1.57087905', '0.00511603', '3.12542533', 'base_link', 'xsens'] #Calibrated on 2025-05-30
+        arguments=['0.0', '-0.01','0.0','-1.5708','0.014', '3.115', 'base_link', 'xsens'] #Calibrated on 2025-10-3
+        
     )
 
-    """ zed_node = Node(
+    zed_node = Node(
        package='zed_wrapper',
        executable='zed_wrapper_node',
        name='zed_node',
        output='screen',
        parameters=[LaunchConfiguration('zed_config')]
-    ) """
+    )
 
     robot_localization_node = Node(
         package='robot_localization',

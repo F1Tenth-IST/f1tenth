@@ -227,7 +227,8 @@ def generate_launch_description():
         #arguments=['0.0', '-0.01','0.0','-1.5882','0.0002','-3.1268', 'base_link', 'xsens']
         #arguments=['0.0', '-0.01','0.0','1.57090571', '-0.00560494', '3.12207931', 'base_link', 'xsens']
         #arguments=['0.0', '-0.01','0.0', str(-PI/2), '0.01232010', str(PI), 'base_link', 'xsens'] # Baseline
-        arguments=['0.0', '-0.01','0.0', '-1.57087905', '0.00511603', '3.12542533', 'base_link', 'xsens'] #Calibrated on 2025-05-30
+        #arguments=['0.0', '-0.01','0.0', '-1.57087905', '0.00511603', '3.12542533', 'base_link', 'xsens'] #Calibrated on 2025-05-30
+        arguments=['0.0', '-0.01','0.0','-1.5708','0.014', '3.115', 'base_link', 'xsens'] #Calibrated on 2025-10-3
     )
 
     static_tf_node_zed2i = Node(
@@ -243,13 +244,13 @@ def generate_launch_description():
         arguments=['0.2', '0.0','0.1', '-1.57000325', '0.00534136', '-1.42339360', 'base_link', 'zed2i'] #Calibrated on 2025-05-30
     )
 
-    """ zed_node = Node(
+    zed_node = Node(
        package='zed_wrapper',
        executable='zed_wrapper_node',
        name='zed_node',
        output='screen',
        parameters=[LaunchConfiguration('zed_config')]
-    ) """
+    ) 
 
     robot_localization_node = Node(
         package='robot_localization',
