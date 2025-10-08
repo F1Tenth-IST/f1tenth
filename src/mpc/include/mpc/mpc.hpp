@@ -41,11 +41,9 @@ public:
         double n   = NAN;
         double u   = NAN;
         double vx  = NAN;
-        double vy  = NAN;
         double r   = NAN;
         double delta = NAN;
-        double T   = NAN;
-    } State; // x = [s; n; µ; vx; vy; r; δ; T]
+    } State; // x = [s; n; µ; vx; r; δ]
 
     typedef struct
     {

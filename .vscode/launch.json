@@ -8,7 +8,7 @@
             "name": "Python Debugger: Current File",
             "type": "debugpy",
             "request": "launch",
-            "program": "./sim_mpc/250916_MPC_curv_off_py/sim_traj_mpc_curv_off.py",
+            "program": "${fileDirname}/sim_traj_mpc_curv_off.py",
             "console": "integratedTerminal"
         }
     ]

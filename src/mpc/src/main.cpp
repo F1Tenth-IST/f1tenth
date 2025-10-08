@@ -44,7 +44,7 @@ MPCNode::MPCNode() : Node("mpc_node"),
     for (int i = 0; i < 2; i++)
         control_vector_pub_[i] = this->create_publisher<std_msgs::msg::Float64MultiArray>("mpc/predict_u" + std::to_string(i), 10);
 
-    for (int i = 0; i < 8; i++)
+    for (int i = 0; i < 6; i++)
         state_vector_pub_[i] = this->create_publisher<std_msgs::msg::Float64MultiArray>("mpc/predict_x" + std::to_string(i), 10);
 
     // Subscribers
@@ -60,8 +60,8 @@ MPCNode::MPCNode() : Node("mpc_node"),
     vesc_servo_sub_ = this->create_subscription<std_msgs::msg::Float64>(
         "/vesc/servo_position_command", 10, std::bind(&MPCNode::VescServoCallback, this, std::placeholders::_1));
 
-    vesc_state_sub_ = this->create_subscription<vesc_msgs::msg::VescStateStamped>(
-        "/vesc/core", 10, std::bind(&MPCNode::VescStateCallback, this, std::placeholders::_1));
+    /* vesc_state_sub_ = this->create_subscription<vesc_msgs::msg::VescStateStamped>(
+        "/vesc/core", 10, std::bind(&MPCNode::VescStateCallback, this, std::placeholders::_1)); */
 
     // Load reference trajectory
     if (!load_reference_trajectory_from_csv(traj_file))
@@ -164,22 +164,22 @@ void MPCNode::initMPC()
     current_state_.delta = 0.0;
 
     if ((std::isnan(current_state_.s) || std::isnan(current_state_.n) || std::isnan(current_state_.u) ||
-            std::isnan(current_state_.vx) || std::isnan(current_state_.vy) || std::isnan(current_state_.r) ||
-            std::isnan(current_state_.delta) || std::isnan(current_state_.T)))
+            std::isnan(current_state_.vx) || std::isnan(current_state_.r) ||
+            std::isnan(current_state_.delta)))
     {
         RCLCPP_WARN(this->get_logger(), "Waiting for valid initial state...");
-        RCLCPP_INFO(this->get_logger(), "Current state: s=%.3f, n=%.3f, u=%.3f, vx=%.3f, vy=%.3f, r=%.3f, delta=%.3f, T=%.3f",
+        RCLCPP_INFO(this->get_logger(), "Current state: s=%.3f, n=%.3f, u=%.3f, vx=%.3f, r=%.3f, delta=%.3f",
                current_state_.s, current_state_.n, current_state_.u, current_state_.vx,
-               current_state_.vy, current_state_.r, current_state_.delta, current_state_.T);
+               current_state_.r, current_state_.delta);
     }
     else
     {
         timer_->cancel();
         
         current_state_.vx = 0.1;
-        Eigen::VectorXd x0(8);
+        Eigen::VectorXd x0(6);
         x0 << current_state_.s, current_state_.n, current_state_.u, current_state_.vx,
-            current_state_.vy, current_state_.r, current_state_.delta, current_state_.T;
+           current_state_.r, current_state_.delta;
         apply_warm_start(x0);
 
         // Set up a timer to solve MPC at a fixed frequency
@@ -217,10 +217,8 @@ void MPCNode::solveMPC()
         current_state_.n,
         current_state_.u,
         current_state_.vx,
-        current_state_.vy,
         current_state_.r,
-        current_state_.delta,
-        current_state_.T};
+        current_state_.delta};
 
     ocp_nlp_constraints_model_set(nlp_config_, nlp_dims_, nlp_in_, nlp_out_, 0, "lbx", current_state_vector_.data());
     ocp_nlp_constraints_model_set(nlp_config_, nlp_dims_, nlp_in_, nlp_out_, 0, "ubx", current_state_vector_.data());
@@ -232,14 +230,12 @@ void MPCNode::solveMPC()
                             current_state_vector_[2],
                             current_state_vector_[3],
                             current_state_vector_[4],
-                            current_state_vector_[5],
-                            current_state_vector_[6],
-                            current_state_vector_[7]};
+                            current_state_vector_[5]};
     state_pub_->publish(state_array_msg);
 
-    RCLCPP_INFO(this->get_logger(), "Current state: s=%.3f, n=%.3f, u=%.3f, vx=%.3f, vy=%.3f, r=%.3f, delta=%.3f, T=%.3f",
+    RCLCPP_INFO(this->get_logger(), "Current state: s=%.3f, n=%.3f, u=%.3f, vx=%.3f, r=%.3f, delta=%.3f",
                 current_state_.s, current_state_.n, current_state_.u, current_state_.vx,
-                current_state_.vy, current_state_.r, current_state_.delta, current_state_.T);
+                current_state_.r, current_state_.delta);
 
     // Solve the MPC problem
     // int status = ocp_nlp_solve(nlp_solver_, nlp_in_, nlp_out_);
@@ -258,15 +254,15 @@ void MPCNode::solveMPC()
     d_print_exp_tran_mat( 2, MPC_MODEL_N, utraj.data(), 2 ); */
 
     // Get control output
-    std::array<double, 8> state_output;
+    std::array<double, 6> state_output;
     double solved_time;
 
     if (status != 0)
     {
         RCLCPP_ERROR(this->get_logger(), "\033[1;31mACADOS solver failed with status %d\033[0m", status);
         solved_time = -1.0;
-        state_output[6] = current_state_.delta;
-        state_output[7] = current_state_.T; // Maintain current control if solver fails
+        state_output[5] = current_state_.delta;
+        state_output[3] = current_state_.vx; // Maintain current control if solver fails
     }
     else
     {
@@ -274,7 +270,7 @@ void MPCNode::solveMPC()
 
         ocp_nlp_out_get(nlp_config_, nlp_dims_, nlp_out_, 1, "x", state_output.data()); // Retrieve control output
 
-        RCLCPP_INFO(this->get_logger(), "Controls: delta=%.3f, T=%.3f", state_output[6], state_output[7]);
+        RCLCPP_INFO(this->get_logger(), "Controls: delta=%.3f, vx=%.3f", state_output[5], state_output[3]);
 
         ocp_nlp_get(nlp_solver_, "time_tot", &solved_time);
     }
@@ -288,15 +284,16 @@ void MPCNode::solveMPC()
     ackermann_msgs::msg::AckermannDriveStamped control_vesc_msg;
     control_vesc_msg.header.stamp = this->get_clock()->now();
     control_vesc_msg.header.frame_id = "base_link";
-    control_vesc_msg.drive.steering_angle = state_output[6] * steering_angle_to_servo_gain;
-    control_vesc_msg.drive.acceleration = state_output[7];
+    control_vesc_msg.drive.steering_angle = state_output[5] * steering_angle_to_servo_gain;
+    control_vesc_msg.drive.speed = state_output[3];
+    //control_vesc_msg.drive.acceleration = state_output[7];
 
     // Publish control output
     control_vesc_pub_->publish(control_vesc_msg);
 
     // Publish control array
     std_msgs::msg::Float64MultiArray control_array_msg;
-    control_array_msg.data = {state_output[6], state_output[7]};
+    control_array_msg.data = {state_output[5], state_output[3]};
     control_pub_->publish(control_array_msg);
 
     // Publish control vector
@@ -315,21 +312,21 @@ void MPCNode::solveMPC()
     control_vector_pub_[1]->publish(predict_u1_msg); */
 
     // Publish state vector
-    // Create a vector of 8 vectors, each with MPC_MODEL_N+1 elements
-    std::vector<std::vector<double>> predict_vector_x(8, std::vector<double>(MPC_MODEL_N + 1));
+    // Create a vector of 6 vectors, each with MPC_MODEL_N+1 elements
+    std::vector<std::vector<double>> predict_vector_x(6, std::vector<double>(MPC_MODEL_N + 1));
     for (int ii = 0; ii <= MPC_MODEL_N; ii++)
     {
-        std::array<double, 8> state_vector;
+        std::array<double, 6> state_vector;
         ocp_nlp_out_get(nlp_config_, nlp_dims_, nlp_out_, ii, "x", state_vector.data());
         // Fill predict_vector_x: [x, y, yaw, theta, v]
-        for (int j = 0; j < 8; j++)
+        for (int j = 0; j < 6; j++)
         {
             predict_vector_x[j][ii] = state_vector[j];
         }
     }
 
     std::vector<std_msgs::msg::Float64MultiArray> state_vector_msgs(8);
-    for (int i = 0; i < 8; i++)
+    for (int i = 0; i < 6; i++)
     {
         state_vector_msgs[i].data = predict_vector_x[i];
         state_vector_pub_[i]->publish(state_vector_msgs[i]);
@@ -459,13 +456,12 @@ std::vector<Eigen::VectorXd> MPCNode::get_warm_start(
     double v_x_min_ws = 0.5; // [m/s] mínimo para evitar singularidades
 
     int horizon = MPC_MODEL_N + 1;
-    int state_dim = 10; // TODO: hardcoded state space dimension
+    int state_dim = 8; // TODO: hardcoded state space dimension
 
     std::vector<Eigen::VectorXd> warm_start(horizon, Eigen::VectorXd::Zero(state_dim));
 
     // inicialização (i = 0)
-    warm_start[0] << x(0), x(1), x(2), x(3), x(4), x(5), x(6), x(7),
-        const_steer_vel, d_acc;
+    warm_start[0] << x(0), x(1), x(2), x(3), x(4), x(5), const_steer_vel, d_acc;
 
     // Propagação simples
     for (int i = 1; i < horizon; i++)
@@ -555,7 +551,7 @@ void MPCNode::OdomCallback(const nav_msgs::msg::Odometry::SharedPtr msg)
 {
 
     current_state_.vx = msg->twist.twist.linear.x;
-    current_state_.vy = msg->twist.twist.linear.y;
+    //current_state_.vy = msg->twist.twist.linear.y;
     current_state_.r = msg->twist.twist.angular.z;
 
     /* if (!use_pose_topic_)
@@ -627,7 +623,7 @@ void MPCNode::VescServoCallback(const std_msgs::msg::Float64::SharedPtr msg)
 void MPCNode::VescStateCallback(const vesc_msgs::msg::VescStateStamped::SharedPtr msg)
 {
     // Process VESC state message
-    current_state_.T = msg->state.duty_cycle;
+    //current_state_.T = msg->state.duty_cycle;
 }
 
 int main(int argc, char **argv)
