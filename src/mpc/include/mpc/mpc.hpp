@@ -7,6 +7,7 @@
 #include <tf2/utils.hpp>
 #include <std_msgs/msg/float64.hpp>
 #include <std_msgs/msg/float64_multi_array.hpp>
+#include "std_msgs/msg/int32.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include <Eigen/Dense>
@@ -67,6 +68,10 @@ private:
     void initMPC();
     void solveMPC();
     void set_trajectory_step();
+    void global_to_local_pose(my_kd_tree_t *index, const std::vector<double> &s_traj,
+                          const std::vector<double> &x_traj, const std::vector<double> &y_traj,
+                          const std::vector<double> &theta_traj, double x, double y, double psi,
+                          double &s_val, double &n_val, double &u_val, double &X_s, double &Y_s, double &theta_s);
 
     rclcpp::Publisher<ackermann_msgs::msg::AckermannDriveStamped>::SharedPtr control_vesc_pub_;
     rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr solved_time_pub_;
@@ -75,6 +80,10 @@ private:
     rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr simulation_trajectory_pub_;
     rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr state_pub_;
     rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr control_pub_;
+    rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr pose_ref_pub_;
+    rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr pose_mpc_pub_;
+    rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr lap_time_pub_;
+    rclcpp::Publisher<std_msgs::msg::Int32>::SharedPtr lap_count_pub_;
 
     std::array<rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr, 8> state_vector_pub_;
     std::array<rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr, 2> control_vector_pub_;
@@ -109,6 +118,10 @@ private:
     int n_u; // Number of controls
 
     KDTreeWithCloud *kd_tree;
+
+    int lap_count_ = 0;
+    rclcpp::Time start_lap_time_= this->get_clock()->now(); 
+    double prev_s_local_ = 0.0;
 
     // ACADOS variables
     ocp_nlp_config *nlp_config_;

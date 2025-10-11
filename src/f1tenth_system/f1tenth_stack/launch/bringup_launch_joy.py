@@ -216,7 +216,9 @@ def generate_launch_description():
         #arguments=['0.0', '0.0','0.05','0.0', '-0.0113', '-3.1359', 'base_link', 'vesc']
         #arguments=['0.0', '0.0','0.05','-1.5601498','0.01884956', '0.0', 'base_link', 'vesc']
         #arguments=['0.0', '0.0','0.05', str(-PI/2), '0.0', '0.0', 'base_link', 'vesc'] # Baseline
-        arguments=['0.0', '0.0','0.05', '-1.56880729', '0.02426539', '0.08179556', 'base_link', 'vesc'] #Calibrated on 2025-05-30
+        #arguments=['0.0', '0.0','0.05', '-1.56880729', '0.02426539', '0.08179556', 'base_link', 'vesc'] #Calibrated on 2025-05-30
+        #arguments=['0.0', '0.0','0.05', str(PI/2), '0.014', str(PI), 'base_link', 'vesc'] #Calibrated on 2025-10-10
+        arguments=['0.0', '0.0','0.05', '1.5743', '0.014', str(PI), 'base_link', 'vesc'] #Calibrated on 2025-10-10
     )
 
     static_tf_node_xsens = Node(
@@ -227,7 +229,8 @@ def generate_launch_description():
         #arguments=['0.0', '-0.01','0.0','-1.5882','0.0002','-3.1268', 'base_link', 'xsens']
         #arguments=['0.0', '-0.01','0.0','1.57090571', '-0.00560494', '3.12207931', 'base_link', 'xsens']
         #arguments=['0.0', '-0.01','0.0', str(-PI/2), '0.01232010', str(PI), 'base_link', 'xsens'] # Baseline
-        arguments=['0.0', '-0.01','0.0', '-1.57087905', '0.00511603', '3.12542533', 'base_link', 'xsens'] #Calibrated on 2025-05-30
+        #arguments=['0.0', '-0.01','0.0', '-1.57087905', '0.00511603', '3.12542533', 'base_link', 'xsens'] #Calibrated on 2025-05-30
+        arguments=['0.0', '-0.01','0.0','-1.5708','0.014', '3.115', 'base_link', 'xsens'] #Calibrated on 2025-10-3
     )
 
     static_tf_node_zed2i = Node(
@@ -256,9 +259,13 @@ def generate_launch_description():
         executable='ekf_node',
         name='ekf_filter_node',
         output='screen',
-        parameters=[os.path.join(get_package_share_directory("f1tenth_stack"), 'config', 'robot_localization.yaml')],
+        parameters=[os.path.join(get_package_share_directory("f1tenth_stack"), 'config', 'config_bicy_xsens_vesc_v3.yaml')],
+        # remappings=[
+        #('odometry/filtered', '/odom_ekf'),       # novo nome
+        #('accel/filtered',    '/accel_ekf'),      # novo nome
+        #]
     )
-
+       
     path_robot_localization_node = Node(
             package='odom_to_path',
             executable='odom_to_path',
@@ -342,7 +349,8 @@ def generate_launch_description():
     #ld.add_action(zed_sdk_node)
 
     ld.add_action(robot_localization_node)
-    #ld.add_action(path_robot_localization_node)
+    ld.add_action(path_robot_localization_node)
+    #ld.add_action(path_robot_localization_node_v2)
 
 
     ld.add_action(xsens_node)
@@ -351,7 +359,7 @@ def generate_launch_description():
     #ld.add_action(slam_node_loc)
     #ld.add_action(save_map)
     
-    ld.add_action(imu_base_link_node)
+    #ld.add_action(imu_base_link_node)
 
     
 

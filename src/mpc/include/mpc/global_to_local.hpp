@@ -54,6 +54,15 @@ void global_to_local_pose(my_kd_tree_t *index, const std::vector<double> &s_traj
                           const std::vector<double> &theta_traj, double x, double y, double psi,
                           double &s_val, double &n_val, double &u_val, double &X_s, double &Y_s, double &theta_s);
 
+void local_to_global_pose(
+    const std::vector<double> &s_traj,
+    const std::vector<double> &x_traj,
+    const std::vector<double> &y_traj,
+    const std::vector<double> &theta_traj,
+    double s_val, double n_val, double u_val,
+    double &x, double &y, double &psi,
+    double &X_s, double &Y_s, double &theta_s);
+
 void cumtrapz(const std::vector<double> &s_traj, const std::vector<double> &kappa_traj, std::vector<double> &theta_traj);
 
 #endif // GLOBAL_TO_LOCAL_HPP

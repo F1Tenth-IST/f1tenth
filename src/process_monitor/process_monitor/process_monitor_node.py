@@ -75,6 +75,7 @@ class ProcessMonitorNode(Node):
         msg.header.frame_id = 'process_monitor'
 
         stats: List[ProcessStat] = []
+        skipped_zero = 0
         for proc in psutil.process_iter(['pid', 'name', 'username', 'memory_percent', 'memory_info']):
             if self._target_username is not None:
                 username = proc.info.get('username')
@@ -82,14 +83,21 @@ class ProcessMonitorNode(Node):
                     continue
 
             try:
-                cpu_percent = proc.cpu_percent(None)
-                mem_percent = float(proc.info.get('memory_percent') or 0.0)
+                cpu_percent_raw = float(proc.cpu_percent(None))
+                mem_percent_raw = float(proc.info.get('memory_percent') or 0.0)
                 mem_info = proc.info.get('memory_info')
                 rss_bytes = getattr(mem_info, 'rss', 0)
             except (psutil.NoSuchProcess, psutil.AccessDenied):
                 continue
 
-            memory_mb = rss_bytes / (1024 ** 2)
+            cpu_percent = round(cpu_percent_raw, 1)
+            mem_percent = round(mem_percent_raw, 1)
+            memory_mb_raw = rss_bytes / (1024 ** 2)
+            memory_mb = round(memory_mb_raw, 1)
+
+            if cpu_percent <= 0.0 and mem_percent <= 0.1:
+                skipped_zero += 1
+                continue
 
             stat = ProcessStat()
             stat.name = proc.info.get('name') or 'unknown'
@@ -101,10 +109,27 @@ class ProcessMonitorNode(Node):
 
             stats.append(stat)
 
+        total_seen = len(stats) + skipped_zero
         stats.sort(key=lambda item: item.cpu_percent, reverse=True)
+        
+        total_non_zero = len(stats)
         if self._max_processes > 0:
+            if total_non_zero > self._max_processes:
+                self.get_logger().warning(
+                    f'Reached max_processes limit: publishing top {self._max_processes} '
+                    f'of {total_non_zero} processes.',
+                    throttle_duration_sec=30.0,
+                )
             stats = stats[: self._max_processes]
 
+        published_count = len(stats)
+        self.get_logger().info(
+            f'process_monitor stats: total={total_seen} non_zero={total_non_zero} '
+            f'published={published_count} skipped_zero={skipped_zero} '
+            f'max={self._max_processes}',
+            throttle_duration_sec=10.0,
+        )
+        
         msg.processes = stats
         self._publisher.publish(msg)
 

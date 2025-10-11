@@ -1,4 +1,5 @@
 #include "mpc/global_to_local.hpp"
+#include "mpc/mpc.hpp"
 
 // Define the PointCloud structure for k-d tree
 KDTreeWithCloud *prepare_kd_tree(const std::vector<double> &x_traj, const std::vector<double> &y_traj)
@@ -13,10 +14,10 @@ KDTreeWithCloud *prepare_kd_tree(const std::vector<double> &x_traj, const std::v
     return new KDTreeWithCloud(cloud, index);
 }
 
-void global_to_local_pose(my_kd_tree_t *index, const std::vector<double> &s_traj,
-                          const std::vector<double> &x_traj, const std::vector<double> &y_traj,
-                          const std::vector<double> &theta_traj, double x, double y, double psi,
-                          double &s_val, double &n_val, double &u_val, double &X_s, double &Y_s, double &theta_s)
+void MPCNode::global_to_local_pose(my_kd_tree_t *index, const std::vector<double> &s_traj,
+                                   const std::vector<double> &x_traj, const std::vector<double> &y_traj,
+                                   const std::vector<double> &theta_traj, double x, double y, double psi,
+                                   double &s_val, double &n_val, double &u_val, double &X_s, double &Y_s, double &theta_s)
 {
     // Query the nearest neighbor (x, y) coordinates using the pre-built k-d tree
     std::vector<double> query_point = {x, y}; // Query point is a 2D point (x, y)
@@ -28,31 +29,92 @@ void global_to_local_pose(my_kd_tree_t *index, const std::vector<double> &s_traj
     index->knnSearch(&query_point[0], num_results, &idx_query[0], &dists_squared[0]);
 
     size_t closest_idx = idx_query[0]; // Closest index in trajectory
-    s_val = s_traj[closest_idx];       // Closest s value (along the path)
+
+    double track_length = s_traj.back();
+    double s_local = s_traj[closest_idx];
+    // Detecta wrap para frente (final → início)
+    if (s_local < prev_s_local_ - 0.9 * track_length)
+    {
+        lap_count_ += 1; // completou uma volta
+        double lap_time_ms = (this->get_clock()->now() - start_lap_time_).seconds() * 1000.0;
+        start_lap_time_ = this->get_clock()->now();
+
+        lap_time_pub_->publish(std_msgs::msg::Float64().set__data(lap_time_ms));
+        lap_count_pub_->publish(std_msgs::msg::Int32().set__data(lap_count_));
+    }
+    // Detecta wrap para trás (início → final)
+    else if (s_local > prev_s_local_ + 0.9 * track_length)
+    {
+        lap_count_ -= 1; // andou uma volta para trás
+    }
+    // Calcula s acumulativo
+    s_val = lap_count_ * track_length + s_local;
+
+    // Atualiza histórico
+    prev_s_local_ = s_local;
+
     X_s = x_traj[closest_idx];
     Y_s = y_traj[closest_idx];
     theta_s = theta_traj[closest_idx]; // Orientation from theta_traj
 
-    // Compute n_val (normal offset) from the global coordinates
-    n_val = (x - X_s) * sin(theta_s) - (y - Y_s) * cos(theta_s);
+    // n > 0 para a esquerda da trajetória
+    n_val = (y - Y_s) * std::cos(theta_s) - (x - X_s) * std::sin(theta_s);
 
     // Compute mu_val (heading difference) from the global orientation
-    u_val = psi - theta_s;
+    double heading_error = psi - theta_s;
+    // Normalize to [-pi, pi]
+    u_val = std::remainder(heading_error, 2.0 * M_PI);
+}
+
+void local_to_global_pose(
+    const std::vector<double> &s_traj,
+    const std::vector<double> &x_traj,
+    const std::vector<double> &y_traj,
+    const std::vector<double> &theta_traj,
+    double s_val, double n_val, double u_val,
+    double &x, double &y, double &psi,
+    double &X_s, double &Y_s, double &theta_s)
+{
+    // Encontra o índice mais próximo em s_traj
+    const double ds = s_traj[1] - s_traj[0];
+
+    size_t closest_idx = static_cast<size_t>(std::round((s_val / ds)));
+
+    if (closest_idx >= s_traj.size())
+    {
+        closest_idx = closest_idx % s_traj.size();
+    }
+
+    // Ponto base na trajetória (coordenadas do caminho)
+    X_s = x_traj[closest_idx];
+    Y_s = y_traj[closest_idx];
+    theta_s = theta_traj[closest_idx];
+
+    // Converte de Frenet (s, n, u) → Global (x, y, ψ)
+    // n é o deslocamento lateral (positivo para esquerda da trajetória)
+    x = X_s - n_val * std::sin(theta_s);
+    y = Y_s + n_val * std::cos(theta_s);
+
+    // ψ (heading global) = heading da trajetória + diferença local
+    psi = std::remainder(theta_s + u_val, 2.0 * M_PI);
 }
 
 // Função para calcular a integração acumulada de kappa para obter theta
-void cumtrapz(const std::vector<double>& s_traj, const std::vector<double>& kappa_traj, std::vector<double>& theta_traj) {
+void cumtrapz(const std::vector<double> &s_traj, const std::vector<double> &kappa_traj, std::vector<double> &theta_traj)
+{
     // Certifique-se de que as dimensões de s_traj e kappa_traj são iguais
-    if (s_traj.size() != kappa_traj.size()) {
+    if (s_traj.size() != kappa_traj.size())
+    {
         std::cerr << "Erro: os vetores s_traj e kappa_traj devem ter o mesmo tamanho." << std::endl;
         return;
     }
 
     // Inicialize o vetor theta_traj com o mesmo tamanho de s_traj
-    theta_traj.resize(s_traj.size(), 0.0);  // Inicializa com 0 (assumindo theta inicial = 0)
+    theta_traj.resize(s_traj.size(), 0.0); // Inicializa com 0 (assumindo theta inicial = 0)
 
     // Método do trapézio para a integração acumulada
-    for (size_t i = 1; i < s_traj.size(); ++i) {
+    for (size_t i = 1; i < s_traj.size(); ++i)
+    {
         // Calcular a diferença entre os pontos de s_traj
         double ds = s_traj[i] - s_traj[i - 1];
 

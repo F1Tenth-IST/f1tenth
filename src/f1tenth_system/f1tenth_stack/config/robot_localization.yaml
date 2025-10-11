@@ -80,9 +80,8 @@ ekf_filter_node: #Config 388
     #imu1: "vesc/imu/raw"
     #imu1_remove_gravitational_acceleration: true
     #imu1_relative: true
-
     #imu1_config: [false, false, false,
-    #              true, true,true,  # Roll, Pitch, Yaw
+    #              true, true, false,  # Roll, Pitch, Yaw
     #              false, false, false,   # dX, dY, dZ
     #              true, true, true,  # dRoll, dPitch, dYaw
     #              true, true, true]

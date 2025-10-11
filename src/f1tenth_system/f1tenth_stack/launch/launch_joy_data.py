@@ -257,16 +257,21 @@ def generate_launch_description():
         executable='ekf_node',
         name='ekf_filter_node',
         output='screen',
-        parameters=[os.path.join(get_package_share_directory("f1tenth_stack"), 'config', 'robot_localization.yaml')],
+        parameters=[os.path.join(get_package_share_directory("f1tenth_stack"), 'config', 'config_bicy_xsens_vesc_v3.yaml')],
+        remappings=[
+        # saídas
+        ('odometry/filtered', '/odom_ekf'),       # novo nome
+        ('accel/filtered',    '/accel_ekf'),      # novo nome
+        ]
     )
-
+    
     path_robot_localization_node = Node(
             package='odom_to_path',
             executable='odom_to_path',
             name='odom_to_path',
             output='screen',
             parameters=[
-                {"odom_topic": "/odometry/filtered"}
+                {"odom_topic": "/odom_ekf"}
             ]
     )
 
@@ -333,7 +338,7 @@ def generate_launch_description():
     #ld.add_action(zed_camera_node)
     #ld.add_action(zed_sdk_node)
 
-    #ld.add_action(robot_localization_node)
+    ld.add_action(robot_localization_node)
     #ld.add_action(path_robot_localization_node)
 
 

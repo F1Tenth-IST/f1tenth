@@ -226,7 +226,7 @@ def generate_launch_description():
         executable='ekf_node',
         name='ekf_filter_node',
         output='screen',
-        parameters=[os.path.join(get_package_share_directory("f1tenth_stack"), 'config', 'robot_localization.yaml')],
+        parameters=[os.path.join(get_package_share_directory("f1tenth_stack"), 'config', 'config_bicy_xsens_vesc_v3.yaml')],
     )
 
     path_robot_localization_node = Node(

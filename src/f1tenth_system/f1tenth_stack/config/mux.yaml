@@ -2,14 +2,14 @@ ackermann_mux:
   ros__parameters:
     topics:
       navigation:
-        topic   : drive
-        timeout : 0.2
-        priority: 10
+        topic   : safety_stop
+        timeout : 0.1
+        priority: 1
       joystick:
         topic   : teleop
-        timeout : 0.2
+        timeout : 0.1
         priority: 100
       autonomous_control:
         topic   : autonomous_control
-        timeout : 0.2
-        priority: 20
+        timeout : 0.15
+        priority: 50
