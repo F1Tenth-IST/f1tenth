@@ -287,20 +287,26 @@ void MPCNode::solveMPC()
 
     // Get control output
     std::array<double, 6> state_output;
+    std::array<double, 2> control_output;
     double solved_time;
+    double steering_cmd, speed_cmd;
 
     if (status != 0)
     {
         RCLCPP_ERROR(this->get_logger(), "\033[1;31mACADOS solver failed with status %d\033[0m", status);
         solved_time = -1.0;
-        state_output[5] = current_state_.delta;
-        state_output[3] = current_state_.vx; // Maintain current control if solver fails
+        steering_cmd = 0.0;
+        speed_cmd = 0.0;
     }
     else
     {
         //RCLCPP_INFO(this->get_logger(), "\033[1;32mACADOS solver succeeded with status %d\033[0m", status);
 
         ocp_nlp_out_get(nlp_config_, nlp_dims_, nlp_out_, 1, "x", state_output.data()); // Retrieve control output
+        ocp_nlp_out_get(nlp_config_, nlp_dims_, nlp_out_, 1, "u", control_output.data());
+        
+        steering_cmd = control_output[0];
+        speed_cmd = state_output[3];
 
         //RCLCPP_INFO(this->get_logger(), "Controls: delta=%.3f, vx=%.3f", state_output[5], state_output[3]);
 
@@ -316,7 +322,7 @@ void MPCNode::solveMPC()
     ackermann_msgs::msg::AckermannDriveStamped control_vesc_msg;
     control_vesc_msg.header.stamp = this->get_clock()->now();
     control_vesc_msg.header.frame_id = "base_link";
-    control_vesc_msg.drive.steering_angle = state_output[5] * steering_angle_to_servo_gain;
+    control_vesc_msg.drive.steering_angle = control_output[0] * steering_angle_to_servo_gain;
     control_vesc_msg.drive.speed = state_output[3];
     // control_vesc_msg.drive.acceleration = state_output[7];
 
@@ -325,7 +331,7 @@ void MPCNode::solveMPC()
 
     // Publish control array
     std_msgs::msg::Float64MultiArray control_array_msg;
-    control_array_msg.data = {state_output[5], state_output[3]};
+    control_array_msg.data = {control_output[0], state_output[3]};
     control_pub_->publish(control_array_msg);
 
     // Publish control vector
