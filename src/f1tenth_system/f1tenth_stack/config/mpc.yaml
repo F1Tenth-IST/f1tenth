@@ -13,12 +13,20 @@ mpc:
 
     v_x_ref: 10.0  # Reference velocity in m/s
 
+    safety_margin: 0.0  # Safety margin from the track boundaries in meters
+
     cost_weights:
+      # Weights for the cost function v1
       w_n: 5.0          # Weight for lateral error
       w_u: 5.0          # Weight for steering input
       w_vx: 10.0         # Weight for velocity error
+      w_s: 10.0         # Weight for progress along the path
       w_r: 5.0          # Weight for yaw rate
       w_dsteering: 5.0 # Weight for steering rate
+      w_dthrottle: 10.0  # Weight for throttle rate
       w_dvelocity: 100.0  # Weight for acceleration
+
+      w_beta: 0.5      # Weight for side slip angle
+      w_vy: 100.0       # Weight for longitudinal velocity
 
     frame_id: "map"  # Frame ID for the trajectory

@@ -301,9 +301,6 @@ class MPCSim:
                 if user_input == "p":
                     print("Simulation paused by user.")
                     break
-            if self.x[0]> self.s_ref[-1]:
-                print("Simulation finished: car reached the end of the track.")
-                break
             
             status, xN, uN, ms = self._solve_one_step()
             status_hist.append(status)
@@ -429,14 +426,13 @@ class MPCSim:
 
 def main():
 
-    #traj_default = "./traj/centerline_0.10_test_map_v2.csv"
+    traj_default = "./traj/centerline_0.10_test_map_v2.csv"
     #traj_default ='traj/centerline_map_2025-09-09_10-52-29.csv'
-    #traj_default ='traj/centerline_0.05_map_2025-10-11_12-41-37.csv'
     traj_default ='traj/centerline_0.10_map_2025-10-15_16-33-33.csv'
     #traj_default = Path("./traj/track_data.csv")
 
     # Exemplo: [s, n, mu, vx, r, delta] 27
-    x_init = np.array([-0.1, 0.1, 0.1, 1.0, 0.01, 0.0], dtype=float)
+    x_init = np.array([0.1, 0.1, 0.1, 0.1, 0.01, 0.0], dtype=float)
 
     ap = argparse.ArgumentParser(
         description="Closed-loop MPC sim (acados) — class-based"

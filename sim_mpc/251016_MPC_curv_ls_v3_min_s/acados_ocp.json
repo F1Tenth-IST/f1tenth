@@ -1,7 +1,7 @@
 {
     "acados_include_path": "/home/desktop/acados/include",
     "acados_lib_path": "/home/desktop/acados/lib",
-    "code_export_directory": "/home/desktop/f1tenth/sim_mpc/251007_MPC_curv_ls_v1/c_generated_code",
+    "code_export_directory": "/home/desktop/f1tenth/sim_mpc/251016_MPC_curv_ls_v3_min_s/c_generated_code",
     "constraints": {
         "C": [],
         "C_e": [],
@@ -346,7 +346,7 @@
         "yref": [
             0.0,
             0.0,
-            "v_x_ref",
+            100.0,
             0.0,
             0.0,
             0.0
@@ -354,7 +354,7 @@
         "yref_0": [
             0.0,
             0.0,
-            "v_x_ref",
+            100.0,
             0.0,
             0.0,
             0.0
@@ -362,7 +362,7 @@
         "yref_e": [
             0.0,
             0.0,
-            "v_x_ref",
+            100.0,
             0.0
         ],
         "zl": [
@@ -459,7 +459,7 @@
         "mpc_model_cost/mpc_model_cost_y_e_fun_jac_ut_xt.c",
         "mpc_model_cost/mpc_model_cost_y_e_hess.c"
     ],
-    "json_file": "/home/desktop/f1tenth/sim_mpc/251007_MPC_curv_ls_v1/acados_ocp.json",
+    "json_file": "/home/desktop/f1tenth/sim_mpc/251016_MPC_curv_ls_v3_min_s/acados_ocp.json",
     "model": {
         "con_h_expr": "@1=fmod(s,21.3), vertcat(((n+right_bound_s(@1){0})-safety_margin), ((n-left_bound_s(@1){0})+safety_margin))",
         "con_h_expr_0": "@1=fmod(s,21.3), vertcat(((n+right_bound_s(@1){0})-safety_margin), ((n-left_bound_s(@1){0})+safety_margin))",
@@ -488,9 +488,9 @@
         "cost_r_in_psi_expr": [],
         "cost_r_in_psi_expr_0": [],
         "cost_r_in_psi_expr_e": [],
-        "cost_y_expr": "vertcat(n, theta, v_x, yaw_rate, u_delta_dot, u_v_x_dot)",
-        "cost_y_expr_0": "vertcat(n, theta, v_x, yaw_rate, u_delta_dot, u_v_x_dot)",
-        "cost_y_expr_e": "vertcat(n, theta, v_x, yaw_rate)",
+        "cost_y_expr": "vertcat(n, theta, ((v_x*cos(theta))/(1-(kapparef_s(fmod(s,21.3)){0}*n))), yaw_rate, u_delta_dot, u_v_x_dot)",
+        "cost_y_expr_0": "vertcat(n, theta, ((v_x*cos(theta))/(1-(kapparef_s(fmod(s,21.3)){0}*n))), yaw_rate, u_delta_dot, u_v_x_dot)",
+        "cost_y_expr_e": "vertcat(n, theta, ((v_x*cos(theta))/(1-(kapparef_s(fmod(s,21.3)){0}*n))), yaw_rate)",
         "disc_dyn_expr": [],
         "dyn_disc_fun": null,
         "dyn_disc_fun_jac": null,

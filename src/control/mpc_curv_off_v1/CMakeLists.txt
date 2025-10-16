@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(mpc_curv_ls_v2)
+project(mpc_curv_off_v1)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
@@ -31,7 +31,7 @@ add_subdirectory(mpc_solver ${CMAKE_CURRENT_BINARY_DIR}/mpc_solver EXCLUDE_FROM_
 
 #add_library(acados_solver_mpc_model SHARED ...)
 
-ament_auto_add_executable(mpc_curv_ls_v2
+ament_auto_add_executable(${PROJECT_NAME}
   src/main.cpp
 )
 

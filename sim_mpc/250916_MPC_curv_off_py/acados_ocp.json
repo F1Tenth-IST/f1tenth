@@ -49,9 +49,18 @@
         "idxsbx_e": [],
         "idxsg": [],
         "idxsg_e": [],
-        "idxsh": [],
-        "idxsh_0": [],
-        "idxsh_e": [],
+        "idxsh": [
+            0,
+            1
+        ],
+        "idxsh_0": [
+            0,
+            1
+        ],
+        "idxsh_e": [
+            0,
+            1
+        ],
         "idxsphi": [],
         "idxsphi_0": [],
         "idxsphi_e": [],
@@ -101,9 +110,18 @@
         "lsbx_e": [],
         "lsg": [],
         "lsg_e": [],
-        "lsh": [],
-        "lsh_0": [],
-        "lsh_e": [],
+        "lsh": [
+            0.0,
+            0.0
+        ],
+        "lsh_0": [
+            0.0,
+            0.0
+        ],
+        "lsh_e": [
+            0.0,
+            0.0
+        ],
         "lsphi": [],
         "lsphi_0": [],
         "lsphi_e": [],
@@ -153,9 +171,18 @@
         "usbx_e": [],
         "usg": [],
         "usg_e": [],
-        "ush": [],
-        "ush_0": [],
-        "ush_e": [],
+        "ush": [
+            0.0,
+            0.0
+        ],
+        "ush_0": [
+            0.0,
+            0.0
+        ],
+        "ush_e": [
+            0.0,
+            0.0
+        ],
         "usphi": [],
         "usphi_0": [],
         "usphi_e": []
@@ -171,12 +198,30 @@
         "W": [],
         "W_0": [],
         "W_e": [],
-        "Zl": [],
-        "Zl_0": [],
-        "Zl_e": [],
-        "Zu": [],
-        "Zu_0": [],
-        "Zu_e": [],
+        "Zl": [
+            1000.0,
+            1000.0
+        ],
+        "Zl_0": [
+            1000.0,
+            1000.0
+        ],
+        "Zl_e": [
+            1000.0,
+            1000.0
+        ],
+        "Zu": [
+            1000.0,
+            1000.0
+        ],
+        "Zu_0": [
+            1000.0,
+            1000.0
+        ],
+        "Zu_e": [
+            1000.0,
+            1000.0
+        ],
         "cost_ext_fun_type": "casadi",
         "cost_ext_fun_type_0": "casadi",
         "cost_ext_fun_type_e": "casadi",
@@ -192,12 +237,30 @@
         "yref": [],
         "yref_0": [],
         "yref_e": [],
-        "zl": [],
-        "zl_0": [],
-        "zl_e": [],
-        "zu": [],
-        "zu_0": [],
-        "zu_e": []
+        "zl": [
+            1000.0,
+            1000.0
+        ],
+        "zl_0": [
+            1000.0,
+            1000.0
+        ],
+        "zl_e": [
+            1000.0,
+            1000.0
+        ],
+        "zu": [
+            1000.0,
+            1000.0
+        ],
+        "zu_0": [
+            1000.0,
+            1000.0
+        ],
+        "zu_e": [
+            1000.0,
+            1000.0
+        ]
     },
     "cython_include_dirs": [
         "/home/desktop/.local/lib/python3.10/site-packages/numpy/core/include",
@@ -224,17 +287,17 @@
         "nr": 0,
         "nr_0": 0,
         "nr_e": 0,
-        "ns": 0,
-        "ns_0": 0,
-        "ns_e": 0,
+        "ns": 2,
+        "ns_0": 2,
+        "ns_e": 2,
         "nsbu": 0,
         "nsbx": 0,
         "nsbx_e": 0,
         "nsg": 0,
         "nsg_e": 0,
-        "nsh": 0,
-        "nsh_0": 0,
-        "nsh_e": 0,
+        "nsh": 2,
+        "nsh_0": 2,
+        "nsh_e": 2,
         "nsphi": 0,
         "nsphi_0": 0,
         "nsphi_e": 0,
@@ -289,12 +352,12 @@
         "cost_conl_custom_outer_hess": [],
         "cost_conl_custom_outer_hess_0": [],
         "cost_conl_custom_outer_hess_e": [],
-        "cost_expr_ext_cost": "(((((((15*sq(n))+(10*sq(theta)))-(3*sq(v_x)))+(0.1*sq(yaw_rate)))+(0.1*sq(delta)))+(0.1*sq(delta_dot)))+(0.1*sq(throttle_dot)))",
-        "cost_expr_ext_cost_0": "(((((((15*sq(n))+(10*sq(theta)))-(3*sq(v_x)))+(0.1*sq(yaw_rate)))+(0.1*sq(delta)))+(0.1*sq(delta_dot)))+(0.1*sq(throttle_dot)))",
+        "cost_expr_ext_cost": "((((weight_ddelta*sq(delta_dot))+(weight_dthrottle*sq(throttle_dot)))+(5*sq((v_x-3))))-(weight_qvx*v_x))",
+        "cost_expr_ext_cost_0": "((((weight_ddelta*sq(delta_dot))+(weight_dthrottle*sq(throttle_dot)))+(5*sq((v_x-3))))-(weight_qvx*v_x))",
         "cost_expr_ext_cost_custom_hess": [],
         "cost_expr_ext_cost_custom_hess_0": [],
         "cost_expr_ext_cost_custom_hess_e": [],
-        "cost_expr_ext_cost_e": "(((((15*sq(n))+(10*sq(theta)))-(3*sq(v_x)))+(0.1*sq(yaw_rate)))+(0.1*sq(delta)))",
+        "cost_expr_ext_cost_e": "((5*sq((v_x-3)))-(weight_qvx*v_x))",
         "cost_psi_expr": [],
         "cost_psi_expr_0": [],
         "cost_psi_expr_e": [],
@@ -422,7 +485,7 @@
         "nlp_solver_tol_ineq": 0.001,
         "nlp_solver_tol_min_step_norm": 0.0,
         "nlp_solver_tol_stat": 0.001,
-        "nlp_solver_type": "SQP",
+        "nlp_solver_type": "SQP_RTI",
         "nlp_solver_warm_start_first_qp": false,
         "nlp_solver_warm_start_first_qp_from_nlp": false,
         "num_threads_in_batch_solve": 1,

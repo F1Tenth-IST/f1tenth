@@ -207,7 +207,7 @@ def bicycle_model(
     model.cost_y_expr = vertcat(
         n,
         theta,
-        v_x,
+        s_dot,
         yaw_rate,
         delta_dot,
         v_x_dot
@@ -218,7 +218,7 @@ def bicycle_model(
     model.yref = np.array([
         0.0,         # n_ref
         0.0,         # theta_ref
-        v_x_ref,      # v_x_ref
+        100.0,      # v_x_ref
         0.0,         # yaw_rate_ref
         0.0,         # ddelta_ref
         0.0          # dv_x_ref

@@ -1,14 +1,16 @@
 ##########################
 # Controller settings    #
 ##########################
-N: 25 #40
+N: 50 #40
 t_delay: 0.0025 #0.01
 steps_delay: 3
-MPC_freq: 10 #40
+MPC_freq: 20 #40
 
 v_x_ref: 2.2  # desired velocity
 
-track_safety_margin: 0.0 #0.25
+tau_delta: 0.05 #0.1
+
+track_safety_margin: 0.2 #0.25
 track_max_width: !!float 100 #100 [m]
 #overtake_d: !!float 1
 
@@ -38,9 +40,9 @@ zu: !!float 1000 #100 linear coefficient input slack variable
 # Model constraints #
 #####################
 #state bounds
-delta_min: !!float -0.4  #-0.4 minimum steering angle [rad]
-delta_max: !!float 0.4 #0.4 maximum steering angle [rad]
-v_min: !!float 0.3 # minimum velocity [m/s]
+delta_min: !!float -0.45  #-0.4 minimum steering angle [rad]
+delta_max: !!float 0.45 #0.4 maximum steering angle [rad]
+v_min: !!float 0.5 # minimum velocity [m/s]
 v_max: !!float 1.6 #3 maximum velocity [m/s]$
 throttle_min: !!float -0.2 #-6  #-12 minimum velocity change rate
 throttle_max: !!float 0.15 #7 maximum velocity change rate
@@ -50,8 +52,8 @@ throttle_max: !!float 0.15 #7 maximum velocity change rate
 # input bounds
 ddelta_min: !!float -3.2 #-5 minimum change rate of stering angle [rad/s]
 ddelta_max: !!float 3.2  #5 maximum change rate of steering angle [rad/s]
-dthrottle_min: !!float -2
-dthrottle_max: !!float 2
+dvx_min: !!float -2
+dvx_max: !!float 2
 
 # nonlinear constraint
 # numbers are too high because the approximation severely underestimates the actual values

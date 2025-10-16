@@ -436,7 +436,7 @@ def main():
     #traj_default = Path("./traj/track_data.csv")
 
     # Exemplo: [s, n, mu, vx, r, delta] 27
-    x_init = np.array([-0.1, 0.1, 0.1, 1.0, 0.01, 0.0], dtype=float)
+    x_init = np.array([5.0, 0.1, 3.14 , 1.0, 0.01, 0.0], dtype=float)
 
     ap = argparse.ArgumentParser(
         description="Closed-loop MPC sim (acados) — class-based"

@@ -247,10 +247,10 @@ def plot_states(mpc_self,x_hist: np.ndarray, u_hist: np.ndarray, dt: float,
     ax.plot(mpc_self.tr["x"], mpc_self.tr["y"], label="Centerline", color="yellow", zorder=1)
     ax.plot(mpc_self.tr["x"] + mpc_self.d_left * np.cos(mpc_self.tr["psi"] + np.pi / 2),
             mpc_self.tr["y"] + mpc_self.d_left * np.sin(mpc_self.tr["psi"] + np.pi / 2),
-            label="Left Boundary", color="blue", linestyle="--")
+            label="Left Boundary", color="red", linestyle="--")
     ax.plot(mpc_self.tr["x"] - mpc_self.d_right * np.cos(mpc_self.tr["psi"] + np.pi / 2),
             mpc_self.tr["y"] - mpc_self.d_right * np.sin(mpc_self.tr["psi"] + np.pi / 2),
-            label="Right Boundary", color="blue", linestyle="--")
+            label="Right Boundary", color="green", linestyle="--")
     ax.axis("equal")
     ax.set_xlabel("X [m]")
     ax.set_ylabel("Y [m]")
@@ -262,7 +262,7 @@ def plot_states(mpc_self,x_hist: np.ndarray, u_hist: np.ndarray, dt: float,
     v_x = x_hist[:, 3]
     points = np.array([x, y]).T.reshape(-1, 1, 2)
     segments = np.concatenate([points[:-1], points[1:]], axis=1)
-    lc = LineCollection(segments, cmap='turbo', norm=plt.Normalize(min(v_x), max(v_x)))
+    lc = LineCollection(segments, cmap='viridis', norm=plt.Normalize(1, 12))
     lc.set_array(v_x)
     lc.set_linewidth(3)
     ax.add_collection(lc)

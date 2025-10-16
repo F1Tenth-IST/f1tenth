@@ -75,22 +75,22 @@ def bicycle_model(
     right_bound_s = interpolant("right_bound_s", "bspline", [s0], d_right)
 
     # CasADi Model
-    # set up states & controls
+    # ---------- STATES ----------
     s = MX.sym("s")
     n = MX.sym("n")
     theta = MX.sym("theta")
     v_x = MX.sym("v_x")
     # v_y = MX.sym("v_y")
     yaw_rate = MX.sym("yaw_rate")
-    delta = MX.sym("delta")
+    delta = MX.sym("delta") # actual steering angle
     #throttle = MX.sym("throttle")
     x = vertcat(s, n, theta, v_x, yaw_rate, delta)
     n_x = x.size()[0]
 
-    # controls
-    u_delta_dot = MX.sym("u_delta_dot")
-    u_v_x_dot = MX.sym("u_v_x_dot")
-    u = vertcat(u_delta_dot, u_v_x_dot)
+    # ---------- CONTROLS ----------
+    delta_cmd = MX.sym("delta_cmd")     # desired steering (input)
+    u_v_x_dot = MX.sym("u_v_x_dot")     # acceleration
+    u = vertcat(delta_cmd, u_v_x_dot)
     n_u = u.size()[0]
 
     # xdot
@@ -135,6 +135,7 @@ def bicycle_model(
     weight_dthrottle = MX.sym("weight_dthrottle")
     weight_qvx = MX.sym("weight_qvx")
     v_x_ref = MX.sym("v_x_ref")
+    tau_delta = MX.sym("tau_delta")
     safety_margin = MX.sym("safety_margin")
     p = vertcat(
         weight_ds,
@@ -143,6 +144,7 @@ def bicycle_model(
         weight_dthrottle,
         weight_qvx,
         v_x_ref,
+        tau_delta,
         safety_margin,
     )  # lateral acceleration constraints
     n_p = p.size()[0]
@@ -162,8 +164,13 @@ def bicycle_model(
     kapparef = kapparef_s(s_mod)
     left_bound = left_bound_s(s_mod)
     right_bound = right_bound_s(s_mod)
+    
+    # ---------- STEERING DELAY MODEL ----------
+    #tau_delta = 0.05  # seconds
+    delta_dot = (delta_cmd - delta) / tau_delta
 
-    # dynamics
+    
+    # ---------- DYNAMICS ----------
     # den = 1 - kapparef * n
     # den_safe = cs.if_else(
     #     cs.fabs(den) < 0.2, 0.2 * cs.sign(den), den
@@ -174,10 +181,8 @@ def bicycle_model(
     theta_dot = yaw_rate - (kapparef * s_dot)
     v_x_dot = u_v_x_dot
     
-    yaw_rate_dot = v_x * u_delta_dot / (lr + lf) # Assumed constant speed
-    
-    delta_dot = u_delta_dot
-    #yaw_rate_dot = 1 /(lr + lf) *(u_v_x_dot * delta + v_x * u_delta_dot) # Variable speed
+    yaw_rate_dot = v_x * delta_dot / (lr + lf) # Assumed constant speed
+    #yaw_rate_dot = 1 /(lr + lf) *(u_v_x_dot * delta + v_x * delta_dot) # Variable speed
     
     
     
@@ -192,7 +197,7 @@ def bicycle_model(
     )
     f_expl_func = Function(
         "f_expl_func",
-        [s, n, theta, v_x, yaw_rate, delta, delta_dot, v_x_dot, p],
+        [s, n, theta, v_x, yaw_rate, delta, delta_cmd, v_x_dot, p],
         [f_expl],
     )
 
@@ -209,7 +214,7 @@ def bicycle_model(
         theta,
         v_x,
         yaw_rate,
-        delta_dot,
+        delta_dot,  # delta_cmd - delta,
         v_x_dot
     )
     model.cost_y_expr_0 = model.cost_y_expr
@@ -220,7 +225,7 @@ def bicycle_model(
         0.0,         # theta_ref
         v_x_ref,      # v_x_ref
         0.0,         # yaw_rate_ref
-        0.0,         # ddelta_ref
+        0.0,         # delta_cmd - delta
         0.0          # dv_x_ref
     ])
     model.yref_0 = model.yref.copy()
@@ -231,12 +236,12 @@ def bicycle_model(
     model.ny_e = model.cost_y_expr_e.size()[0]
     
     model.W = np.diag([
-        2 * 5,      # penalização de n
-        2 * 5,     # penalização de theta
-        2 * 10,     # penalização de erro em v_x
-        2 * 5,     # penalização de erro em yaw_rate
-        2 * 5,      # penalização de ddelta
-        2 * 1       # penalização de dv_x
+        10,      # penalização de n
+        5,     # penalização de theta
+        5,     # penalização de erro em v_x
+        5,     # penalização de erro em yaw_rate
+        1,      # penalização de ddelta
+        1       # penalização de dv_x
     ])
     model.W_0 = model.W
     model.W_e = model.W[:-2, :-2] * terminal_multiplier
