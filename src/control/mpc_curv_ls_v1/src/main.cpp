@@ -14,10 +14,12 @@ MPCNode::MPCNode() : Node("mpc_node"),
     RCLCPP_INFO(this->get_logger(), "MPC Node initialized.");
     // Declare parameters
     this->declare_parameter<std::string>("odom_topic", "/odometry/filtered");
-    this->declare_parameter<std::string>("traj_file", "./traj/centerline_0.10_map_2025-10-08_19-32-41.csv");
+    this->declare_parameter<std::string>("traj_file", "./traj/centerline_0.10_map_2025-10-16_14-21-10_v2.csv");
     this->declare_parameter<std::string>("frame_id", "odom");
     this->declare_parameter<std::string>("pose_topic", "/tracked_pose");
     this->declare_parameter<double>("v_x_ref", 1.5);
+    this->declare_parameter<double>("steering_delay", 0);
+    this->declare_parameter<double>("steering_max", 0.4); // Maximum steering angle in radians (24 degrees) 
     // Declare cost weights as parameters
     this->declare_parameter<double>("cost_weights.w_n", 10.0);
     this->declare_parameter<double>("cost_weights.w_u", 5.0);
@@ -33,6 +35,8 @@ MPCNode::MPCNode() : Node("mpc_node"),
     double w_r = this->get_parameter("cost_weights.w_r").as_double();
     double w_dsteering = this->get_parameter("cost_weights.w_dsteering").as_double();
     double w_dvelocity = this->get_parameter("cost_weights.w_dvelocity").as_double();
+    steering_delay_ = this->get_parameter("steering_delay").as_double();
+    
 
     // Retrieve parameters
     std::string odom_topic = this->get_parameter("odom_topic").as_string();
@@ -40,6 +44,7 @@ MPCNode::MPCNode() : Node("mpc_node"),
     frame_id_ = this->get_parameter("frame_id").as_string();
     std::string pose_topic_ = this->get_parameter("pose_topic").as_string();
     double v_x_ref = this->get_parameter("v_x_ref").as_double();
+    double steering_max = this->get_parameter("steering_max").as_double();
 
     if (pose_topic_ == "")
     {
@@ -123,6 +128,7 @@ MPCNode::MPCNode() : Node("mpc_node"),
                 cost_weights[3], cost_weights[4], cost_weights[5]);
     Eigen::MatrixXd W = Eigen::MatrixXd::Zero(6, 6);
     W.diagonal() << cost_weights[0], cost_weights[1], cost_weights[2], cost_weights[3], cost_weights[4], cost_weights[5];
+    RCLCPP_INFO(this->get_logger(), "MODEL N: %d", MPC_MODEL_N);
     for (size_t k = 0; k < MPC_MODEL_N; k++)
     {
         ocp_nlp_cost_model_set(nlp_config_, nlp_dims_, nlp_in_, k, "W", W.data());
@@ -133,14 +139,21 @@ MPCNode::MPCNode() : Node("mpc_node"),
 
     std::vector<double> y_ref(6, 0.0); // [n, u, vx, r, d_steering, d_velocity]
     y_ref[2] = v_x_ref;                // Reference velocity
+    std::vector<double> ubx = {2.0, v_x_ref, steering_max};
+    RCLCPP_INFO(this->get_logger(),"Reference velocity: %.2f m/s\n", v_x_ref);
     for (size_t k = 0; k < MPC_MODEL_N; k++)
     {
+
         ocp_nlp_cost_model_set(nlp_config_, nlp_dims_, nlp_in_, k, "y_ref", y_ref.data());
+        ocp_nlp_constraints_model_set(nlp_config_, nlp_dims_, nlp_in_, nlp_out_, k, "ubx", ubx.data());
     }
 
     // Set final cost reference
     std::vector<double> y_ref_e(y_ref.begin(), y_ref.end() - 2);
     ocp_nlp_cost_model_set(nlp_config_, nlp_dims_, nlp_in_, MPC_MODEL_N, "y_ref", y_ref_e.data());
+    ocp_nlp_constraints_model_set(nlp_config_, nlp_dims_, nlp_in_, nlp_out_, MPC_MODEL_N, "ubx", ubx.data());
+
+
 
     // nlp_config_ = ocp_nlp_config_create(nlp_dims_);
     // nlp_dims_ = ocp_nlp_dims_create(nlp_config_);
@@ -314,8 +327,7 @@ void MPCNode::solveMPC()
     {
         // RCLCPP_INFO(this->get_logger(), "\033[1;32mACADOS solver succeeded with status %d\033[0m", status);
 
-        double steering_delay= 0.05; // 500 ms delay
-        int steering_idx = int(steering_delay * frequency);
+        int steering_idx = std::max(int(steering_delay_ * frequency), 1); // Index in the horizon corresponding to the steering delay
         std::array<double, 6> state_output_str_idx;
 
         ocp_nlp_out_get(nlp_config_, nlp_dims_, nlp_out_, 1, "x", state_output_1.data()); // Retrieve control output
@@ -323,7 +335,7 @@ void MPCNode::solveMPC()
 
         ocp_nlp_out_get(nlp_config_, nlp_dims_, nlp_out_, steering_idx, "x", state_output_str_idx.data()); // Retrieve state at steering delay index
 
-        steering_cmd = state_output_1[5];
+        steering_cmd = state_output_str_idx[5];
         speed_cmd = state_output_1[3];
 
         // RCLCPP_INFO(this->get_logger(), "Controls: delta=%.3f, vx=%.3f", state_output[5], state_output[3]);

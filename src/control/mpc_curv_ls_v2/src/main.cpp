@@ -18,6 +18,7 @@ MPCNode::MPCNode() : Node("mpc_node"),
     this->declare_parameter<std::string>("frame_id", "odom");
     this->declare_parameter<std::string>("pose_topic", "/tracked_pose");
     this->declare_parameter<double>("v_x_ref", 1.5);
+    this->declare_parameter<double>("steering_max", 0.4);
     // Declare cost weights as parameters
     this->declare_parameter<double>("cost_weights.w_n", 10.0);
     this->declare_parameter<double>("cost_weights.w_u", 5.0);
@@ -40,6 +41,7 @@ MPCNode::MPCNode() : Node("mpc_node"),
     frame_id_ = this->get_parameter("frame_id").as_string();
     std::string pose_topic_ = this->get_parameter("pose_topic").as_string();
     double v_x_ref = this->get_parameter("v_x_ref").as_double();
+    double steering_max = this->get_parameter("steering_max").as_double();
 
     if (pose_topic_ == "")
     {
@@ -133,14 +135,17 @@ MPCNode::MPCNode() : Node("mpc_node"),
 
     std::vector<double> y_ref(6, 0.0); // [n, u, vx, r, d_steering, d_velocity]
     y_ref[2] = v_x_ref;                // Reference velocity
+    std::vector<double> ubx = {v_x_ref, steering_max};
     for (size_t k = 0; k < MPC_MODEL_N; k++)
     {
         ocp_nlp_cost_model_set(nlp_config_, nlp_dims_, nlp_in_, k, "y_ref", y_ref.data());
+        ocp_nlp_constraints_model_set(nlp_config_, nlp_dims_, nlp_in_, nlp_out_, k, "ubx", ubx.data());
     }
 
     // Set final cost reference
     std::vector<double> y_ref_e(y_ref.begin(), y_ref.end() - 2);
     ocp_nlp_cost_model_set(nlp_config_, nlp_dims_, nlp_in_, MPC_MODEL_N, "y_ref", y_ref_e.data());
+    ocp_nlp_constraints_model_set(nlp_config_, nlp_dims_, nlp_in_, nlp_out_, MPC_MODEL_N, "ubx", ubx.data());
 
     // nlp_config_ = ocp_nlp_config_create(nlp_dims_);
     // nlp_dims_ = ocp_nlp_dims_create(nlp_config_);

@@ -18,6 +18,7 @@ MPCNode::MPCNode() : Node("mpc_node"),
     this->declare_parameter<std::string>("frame_id", "odom");
     this->declare_parameter<std::string>("pose_topic", "/tracked_pose");
     this->declare_parameter<double>("v_x_ref", 1.5);
+    this->declare_parameter<double>("safety_margin", 0.1);
     // Declare cost weights as parameters
     this->declare_parameter<double>("cost_weights.w_n", 10.0);
     this->declare_parameter<double>("cost_weights.w_u", 5.0);
@@ -25,6 +26,7 @@ MPCNode::MPCNode() : Node("mpc_node"),
     this->declare_parameter<double>("cost_weights.w_r", 5.0);
     this->declare_parameter<double>("cost_weights.w_dsteering", 1.0);
     this->declare_parameter<double>("cost_weights.w_dvelocity", 1.0);
+    this->declare_parameter<double>("steering_max", 0.4);
 
     // Retrieve cost weights
     double w_n = this->get_parameter("cost_weights.w_n").as_double();
@@ -33,6 +35,7 @@ MPCNode::MPCNode() : Node("mpc_node"),
     double w_r = this->get_parameter("cost_weights.w_r").as_double();
     double w_dsteering = this->get_parameter("cost_weights.w_dsteering").as_double();
     double w_dvelocity = this->get_parameter("cost_weights.w_dvelocity").as_double();
+    double safety_margin = this->get_parameter("safety_margin").as_double();
 
     // Retrieve parameters
     std::string odom_topic = this->get_parameter("odom_topic").as_string();
@@ -40,6 +43,7 @@ MPCNode::MPCNode() : Node("mpc_node"),
     frame_id_ = this->get_parameter("frame_id").as_string();
     std::string pose_topic_ = this->get_parameter("pose_topic").as_string();
     double v_x_ref = this->get_parameter("v_x_ref").as_double();
+    double steering_max = this->get_parameter("steering_max").as_double();
 
     if (pose_topic_ == "")
     {
@@ -133,14 +137,17 @@ MPCNode::MPCNode() : Node("mpc_node"),
 
     std::vector<double> y_ref(6, 0.0); // [n, u, vx, r, d_steering, d_velocity]
     y_ref[2] = v_x_ref;                // Reference velocity
+    std::vector<double> ubx = {v_x_ref, steering_max};
     for (size_t k = 0; k < MPC_MODEL_N; k++)
     {
         ocp_nlp_cost_model_set(nlp_config_, nlp_dims_, nlp_in_, k, "y_ref", y_ref.data());
+        ocp_nlp_constraints_model_set(nlp_config_, nlp_dims_, nlp_in_, nlp_out_, k, "ubx", ubx.data());
     }
 
     // Set final cost reference
     std::vector<double> y_ref_e(y_ref.begin(), y_ref.end() - 2);
     ocp_nlp_cost_model_set(nlp_config_, nlp_dims_, nlp_in_, MPC_MODEL_N, "y_ref", y_ref_e.data());
+    ocp_nlp_constraints_model_set(nlp_config_, nlp_dims_, nlp_in_, nlp_out_, MPC_MODEL_N, "ubx", ubx.data());
 
     // nlp_config_ = ocp_nlp_config_create(nlp_dims_);
     // nlp_dims_ = ocp_nlp_dims_create(nlp_config_);
@@ -153,13 +160,13 @@ MPCNode::MPCNode() : Node("mpc_node"),
     // ocp_nlp_precompute(nlp_solver_, nlp_in_, nlp_out_);
 
     // Parameter vector
-    /* double p[7] = {weight_ds, weight_beta, weight_dalpha, weight_dthrottle, 1.0, 1.0, safety_margin};
+    double p[7] = {1.0, 1.0, 1.0, 1.0, 1.0, 1.0, safety_margin};
     int idxs[7] = {0, 1, 2, 3, 4, 5, 6}; // indices for the parameters
 
     for (int i = 0; i < MPC_MODEL_N; i++)
     {
         ocp_nlp_in_set_params_sparse(nlp_config_, nlp_dims_, nlp_in_, i, idxs, p, 7);
-    } */
+    }
 
     // Set print level 0
     int print_level = 0;
@@ -318,7 +325,7 @@ void MPCNode::solveMPC()
         ocp_nlp_out_get(nlp_config_, nlp_dims_, nlp_out_, 1, "x", state_output_1.data()); // Retrieve control output
         ocp_nlp_out_get(nlp_config_, nlp_dims_, nlp_out_, 1, "u", control_output_1.data());
 
-        steering_cmd = control_output_1[0];
+        steering_cmd = state_output_1[5];
         speed_cmd = state_output_1[3];
 
         // RCLCPP_INFO(this->get_logger(), "Controls: delta=%.3f, vx=%.3f", state_output[5], state_output[3]);

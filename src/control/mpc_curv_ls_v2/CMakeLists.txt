@@ -29,6 +29,10 @@ link_directories($ENV{ACADOS_INSTALL_DIR}/lib)
 set(BUILD_ACADOS_SOLVER_LIB ON CACHE INTERNAL "")
 add_subdirectory(mpc_solver ${CMAKE_CURRENT_BINARY_DIR}/mpc_solver EXCLUDE_FROM_ALL)
 
+# ensure the generated solver library gets an MPC-specific name to avoid clashes with other packages
+set_target_properties(acados_solver_mpc_model PROPERTIES OUTPUT_NAME acados_solver_mpc_curv_ls_v2)
+set(MPC_SOLVER_LIBRARY_FILENAME libacados_solver_mpc_curv_ls_v2.so)
+
 #add_library(acados_solver_mpc_model SHARED ...)
 
 ament_auto_add_executable(mpc_curv_ls_v2
@@ -93,8 +97,8 @@ endif()
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_INSTALL_PREFIX}/lib
   COMMAND ${CMAKE_COMMAND} -E copy
-    ${CMAKE_CURRENT_BINARY_DIR}/mpc_solver/libacados_solver_mpc_model.so
-    ${CMAKE_INSTALL_PREFIX}/lib/libacados_solver_mpc_model.so
+    ${CMAKE_CURRENT_BINARY_DIR}/mpc_solver/${MPC_SOLVER_LIBRARY_FILENAME}
+    ${CMAKE_INSTALL_PREFIX}/lib/${MPC_SOLVER_LIBRARY_FILENAME}
 )
 
 # Configurar testes (opcional)

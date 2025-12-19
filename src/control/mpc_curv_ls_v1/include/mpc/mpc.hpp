@@ -28,8 +28,6 @@
 
 #include "vesc_msgs/msg/vesc_state_stamped.hpp"
 
-// #define MPC_MODEL_N // Prediction horizon
-
 class MPCNode : public rclcpp::Node
 {
 public:
@@ -100,6 +98,8 @@ private:
     double speed_to_duty;
     double steering_angle_to_servo_gain;
     double steering_angle_to_servo_offset;
+
+    double steering_delay_;
 
     double frequency;
 
