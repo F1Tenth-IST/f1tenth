@@ -275,6 +275,16 @@ def generate_launch_description():
                 {"odom_topic": "/odometry/filtered"}
             ]
     )
+    
+    path_robot_slam_node = Node(
+            package='odom_to_path',
+            executable='odom_to_path',
+            name='odom_to_path',
+            output='screen',
+            parameters=[
+                {"pose_topic": "/tracked_pose"}
+            ]
+    )
 
     xsens_node = Node(
         package='xsens_mti_ros2_driver',
@@ -354,6 +364,8 @@ def generate_launch_description():
 
 
     ld.add_action(xsens_node)
+    
+    ld.add_action(path_robot_slam_node)
     
     #ld.add_action(slam_node_map)
     #ld.add_action(slam_node_loc)

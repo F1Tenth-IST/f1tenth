@@ -8,25 +8,28 @@ mpc:
     #pose_topic: "/pose"  # Pose topic, leave empty "" if not using pose
     pose_topic: "/tracked_pose"  # Pose topic, leave empty "" if not using pose
 
-    traj_file: "traj/centerline_0.10_map_2025-10-15_16-33-33.csv" # Trajectory file
+    traj_file: "traj/centerline_0.10_map_2025-11-13_11-46-33_v2.csv" # Trajectory file
     #traj_file: "traj/pts/oito_n1000_a2.5_b1.8_v1.0.csv" # Trajectory file
 
-    v_x_ref: 10.0  # Reference velocity in m/s
+    v_x_ref: 4.5  # Reference velocity in m/s
+    steering_delay: 0.0  # Steering delay in seconds
 
-    safety_margin: 0.0  # Safety margin from the track boundaries in meters
+    steering_max: 0.4  # Maximum steering angle in radians (24 degrees)
+
+    safety_margin: 0.2  # Safety margin from the track boundaries in meters
 
     cost_weights:
       # Weights for the cost function v1
-      w_n: 5.0          # Weight for lateral error
-      w_u: 5.0          # Weight for steering input
+      w_n: 0.05          # Weight for lateral error
+      w_u: 0.03         # Weight for headling error
       w_vx: 10.0         # Weight for velocity error
-      w_s: 10.0         # Weight for progress along the path
-      w_r: 5.0          # Weight for yaw rate
-      w_dsteering: 5.0 # Weight for steering rate
-      w_dthrottle: 10.0  # Weight for throttle rate
-      w_dvelocity: 100.0  # Weight for acceleration
+      w_s: 0.5         # Weight for progress along the path
+      w_r: 7.0          # Weight for yaw rate
+      w_dsteering: 0.01 # Weight for steering rate
+      w_dthrottle: 0.5  # Weight for throttle rate
+      w_dvelocity: 1.0  # Weight for acceleration
 
-      w_beta: 0.5      # Weight for side slip angle
+      w_beta: 10.0   # Weight for side slip angle
       w_vy: 100.0       # Weight for longitudinal velocity
 
     frame_id: "map"  # Frame ID for the trajectory

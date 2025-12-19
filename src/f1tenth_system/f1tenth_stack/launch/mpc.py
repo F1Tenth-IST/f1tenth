@@ -30,21 +30,10 @@ from launch_ros.actions import Node
 from ament_index_python.packages import get_package_share_directory
 
 
-MPC_TARGETS = {
-    'mpc': ('mpc', 'mpc'),
-    'mpc_curv_ls_v1': ('mpc_curv_ls_v1', 'mpc_curv_ls_v1'),
-    'mpc_curv_ls_v2': ('mpc_curv_ls_v2', 'mpc_curv_ls_v2'),
-}
-
-
 def launch_setup(context, *args, **kwargs):
-    variant = LaunchConfiguration('MPC').perform(context)
-
-    if variant not in MPC_TARGETS:
-        available = ', '.join(sorted(MPC_TARGETS.keys()))
-        raise RuntimeError(f"Unsupported MPC variant '{variant}'. Available options: {available}")
-
-    package, executable = MPC_TARGETS[variant]
+    
+    package = LaunchConfiguration('MPC').perform(context)
+    executable = LaunchConfiguration('MPC').perform(context)
 
     node = Node(
         package=package,
