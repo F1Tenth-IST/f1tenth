@@ -1,6 +1,0 @@
-image: maps/map_2025-10-16_14-21-10/map_output.pgm
-resolution: 0.005000
-origin: [-5.676863, -3.154792, 0.0]
-negate: 0
-occupied_thresh: 0.65
-free_thresh: 0.196

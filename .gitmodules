@@ -3,19 +3,25 @@
 	url = https://github.com/NVIDIA-AI-IOT/ros2_jetson_stats.git
 [submodule "src/f1tenth_system/vesc"]
 	path = src/f1tenth_system/vesc
-	url = git@github.com:duartetdomingues/vesc.git
+	url = https://github.com/F1Tenth-IST/vesc.git
 [submodule "src/robot_localization"]
 	path = src/robot_localization
-	url = git@github.com:cra-ros-pkg/robot_localization.git
+	url = https://github.com/cra-ros-pkg/robot_localization.git
 [submodule "src/zed-ros2-wrapper"]
 	path = src/zed-ros2-wrapper
-	url = git@github.com:duartetdomingues/zed-ros2-wrapper.git
+	url = https://github.com/F1Tenth-IST/zed-ros2-wrapper.git
 [submodule "src/cartographer_ros"]
 	path = src/cartographer_ros
-	url = git@github.com:duartetdomingues/cartographer_ros.git
+	url = https://github.com/F1Tenth-IST/cartographer_ros.git
 [submodule "src/cartographer"]
 	path = src/cartographer
-	url = git@github.com:ros2/cartographer.git
+	url = https://github.com/ros2/cartographer.git
 [submodule "src/control/utils/lib/nanoflann"]
 	path = src/control/utils/lib/nanoflann
 	url = https://github.com/jlblancoc/nanoflann.git
+[submodule "maps"]
+	path = maps
+	url = https://github.com/F1Tenth-IST/maps.git
+[submodule "traj"]
+	path = traj
+	url = https://github.com/F1Tenth-IST/traj.git
