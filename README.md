@@ -12,6 +12,16 @@ The framework implements a hierarchical architecture to push the vehicle to its 
 
 ---
 
+## 🚀 Getting Started
+
+To get up and running with the full stack:
+
+- 📦 [Installation Guide](docs/installation.md) — Complete environment setup (Docker or native)
+- ▶️ [Usage Guide](docs/usage.md) — Running simulation, stack bringup, and MPC
+- 🧭 [Repository Documentation](docs/documentation.md) — Codebase structure and key components
+
+---
+
 ## 🛠️ System Architecture
 The pipeline is designed to run entirely onboard the vehicle using ROS 2 Humble.
 

@@ -1,0 +1,10 @@
+numpy==1.26.4
+scipy==1.10.1
+matplotlib
+casadi
+pyyaml
+pandas
+tqdm
+opencv-python
+scikit-learn
+shapely

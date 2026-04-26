@@ -85,5 +85,13 @@
         "core": "cpp",
         "splines": "cpp"
     },
-    "cmake.sourceDirectory": "/home/desktop/f1tenth/sim_mpc/learning_mpcc"
+    "cmake.sourceDirectory": "/home/desktop/f1tenth/sim_mpc/learning_mpcc",
+    "python.autoComplete.extraPaths": [
+        "/opt/ros/humble/lib/python3.10/site-packages",
+        "/opt/ros/humble/local/lib/python3.10/dist-packages"
+    ],
+    "python.analysis.extraPaths": [
+        "/opt/ros/humble/lib/python3.10/site-packages",
+        "/opt/ros/humble/local/lib/python3.10/dist-packages"
+    ]
 }
